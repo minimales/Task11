@@ -6,13 +6,7 @@ using Serilog.Context;
 
 namespace task11.Web.Middleware;
 
-/// <summary>
-/// Logs a sanitized request entry (method, full URL, body) and a response entry
-/// (status, body, elapsed). Request bodies are buffered and rewound; the response stream is
-/// swapped for a <see cref="MemoryStream"/> and copied back. Bodies pass through
-/// <see cref="LogSanitizer"/>; the <c>Authorization</c> header is never logged.
-/// </summary>
-public sealed class RequestResponseLoggingMiddleware
+public class RequestResponseLoggingMiddleware
 {
     private const int _defaultMaxBodyBytes = 32 * 1024;
 
@@ -34,8 +28,6 @@ public sealed class RequestResponseLoggingMiddleware
 
     public async Task InvokeAsync(HttpContext context)
     {
-        // Runs after authentication, so HttpContext.User is populated: tag every log line in this
-        // request with the authenticated user id so one user's request sequence is separable from another's.
         string userId = context.User?.FindFirst("sub")?.Value
                         ?? context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value
                         ?? "anonymous";

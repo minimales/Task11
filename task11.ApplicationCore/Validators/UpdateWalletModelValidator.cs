@@ -3,11 +3,7 @@ using task11.ApplicationCore.Models;
 
 namespace task11.ApplicationCore.Validators;
 
-/// <summary>
-/// Validates <see cref="UpdateWalletModel"/>: name 1..100; currency required and
-/// matching ISO-4217 ^[A-Z]{3}$. Immutability once operations exist is enforced in the service.
-/// </summary>
-public sealed class UpdateWalletModelValidator : AbstractValidator<UpdateWalletModel>
+public class UpdateWalletModelValidator : AbstractValidator<UpdateWalletModel>
 {
     public UpdateWalletModelValidator()
     {

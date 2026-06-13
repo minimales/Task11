@@ -3,12 +3,7 @@ using task11.ApplicationCore.Models;
 
 namespace task11.ApplicationCore.Validators;
 
-/// <summary>
-/// Validates <see cref="CreateOperationModel"/>: positive bounded amount with at most two
-/// decimals, a sane date window, an optional ISO-4217 currency, and a bounded note.
-/// FK existence and ownership are checked in the service layer.
-/// </summary>
-public sealed class CreateOperationModelValidator : AbstractValidator<CreateOperationModel>
+public class CreateOperationModelValidator : AbstractValidator<CreateOperationModel>
 {
     public CreateOperationModelValidator()
     {

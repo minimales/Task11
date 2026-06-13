@@ -4,11 +4,7 @@ using task11.Data.Entities;
 
 namespace task11.ApplicationCore.Repositories;
 
-/// <summary>
-/// EF Core repository for <see cref="FinancialOperationEntity"/>. Each method opens a fresh
-/// context via <see cref="DbContextFactory"/>; reads honour the soft-delete query filter.
-/// </summary>
-public sealed class OperationRepository : IOperationRepository
+public class OperationRepository : IOperationRepository
 {
     private readonly DbContextFactory _factory;
 
@@ -17,7 +13,6 @@ public sealed class OperationRepository : IOperationRepository
         _factory = factory ?? throw new ArgumentNullException(nameof(factory));
     }
 
-    /// <inheritdoc />
     public async Task<FinancialOperationEntity?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         await using var ctx = _factory.CreateDbContext();
@@ -26,7 +21,6 @@ public sealed class OperationRepository : IOperationRepository
             .FirstOrDefaultAsync(o => o.Id == id, cancellationToken);
     }
 
-    /// <inheritdoc />
     public async Task<FinancialOperationEntity?> GetWithTypeAsync(Guid id, CancellationToken cancellationToken = default)
     {
         await using var ctx = _factory.CreateDbContext();
@@ -36,7 +30,6 @@ public sealed class OperationRepository : IOperationRepository
             .FirstOrDefaultAsync(o => o.Id == id, cancellationToken);
     }
 
-    /// <inheritdoc />
     public async Task<IReadOnlyList<FinancialOperationEntity>> ListByWalletAsync(
         Guid walletId,
         CancellationToken cancellationToken = default)
@@ -51,7 +44,6 @@ public sealed class OperationRepository : IOperationRepository
             .ToListAsync(cancellationToken);
     }
 
-    /// <inheritdoc />
     public async Task<OperationTypeEntity?> GetTypeForWalletAsync(
         Guid typeId,
         Guid walletId,
@@ -63,7 +55,6 @@ public sealed class OperationRepository : IOperationRepository
             .FirstOrDefaultAsync(t => t.Id == typeId && t.WalletId == walletId, cancellationToken);
     }
 
-    /// <inheritdoc />
     public async Task AddAsync(FinancialOperationEntity operation, CancellationToken cancellationToken = default)
     {
         await using var ctx = _factory.CreateDbContext();
@@ -71,7 +62,6 @@ public sealed class OperationRepository : IOperationRepository
         await ctx.SaveChangesAsync(cancellationToken);
     }
 
-    /// <inheritdoc />
     public async Task UpdateAsync(FinancialOperationEntity operation, CancellationToken cancellationToken = default)
     {
         await using var ctx = _factory.CreateDbContext();
@@ -79,7 +69,6 @@ public sealed class OperationRepository : IOperationRepository
         await ctx.SaveChangesAsync(cancellationToken);
     }
 
-    /// <inheritdoc />
     public async Task SoftDeleteAsync(FinancialOperationEntity operation, CancellationToken cancellationToken = default)
     {
         await using var ctx = _factory.CreateDbContext();

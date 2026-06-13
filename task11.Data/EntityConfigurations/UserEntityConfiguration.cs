@@ -4,8 +4,7 @@ using task11.Data.Entities;
 
 namespace task11.Data.EntityConfigurations;
 
-/// <summary>EF mapping for <see cref="UserEntity"/>.</summary>
-public sealed class UserEntityConfiguration : IEntityTypeConfiguration<UserEntity>
+public class UserEntityConfiguration : IEntityTypeConfiguration<UserEntity>
 {
     public void Configure(EntityTypeBuilder<UserEntity> builder)
     {
@@ -26,7 +25,6 @@ public sealed class UserEntityConfiguration : IEntityTypeConfiguration<UserEntit
             .HasMaxLength(20)
             .HasDefaultValue("User");
 
-        // Filtered unique index: username is unique among non-deleted users.
         builder.HasIndex(u => u.Username)
             .IsUnique()
             .HasFilter("\"IsDeleted\" = false");

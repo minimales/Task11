@@ -6,12 +6,7 @@ using task11.Data.Entities;
 
 namespace task11.ApplicationCore.Services;
 
-/// <summary>
-/// Default <see cref="IReportService"/>. Resolves the target wallet, enforces ownership
-/// isolation, then aggregates totals server-side over UTC date ranges and maps the
-/// in-range operations to the report model.
-/// </summary>
-public sealed class ReportService : IReportService
+public class ReportService : IReportService
 {
     private readonly IReportRepository _reportRepository;
     private readonly IWalletRepository _walletRepository;
@@ -27,7 +22,6 @@ public sealed class ReportService : IReportService
         _currentUser = currentUser;
     }
 
-    /// <inheritdoc />
     public async Task<ReportModel> GetDailyAsync(
         DailyReportModel request,
         CancellationToken cancellationToken = default)
@@ -36,14 +30,12 @@ public sealed class ReportService : IReportService
 
         var wallet = await ResolveAccessibleWalletAsync(request.WalletId, cancellationToken);
 
-        // [date, date+1) computed in UTC.
         var fromUtc = ToUtcDate(request.Date);
         var toUtc = fromUtc.AddDays(1);
 
         return await BuildReportAsync(wallet, fromUtc, toUtc, cancellationToken);
     }
 
-    /// <inheritdoc />
     public async Task<ReportModel> GetPeriodAsync(
         PeriodReportModel request,
         CancellationToken cancellationToken = default)
@@ -52,7 +44,6 @@ public sealed class ReportService : IReportService
 
         var wallet = await ResolveAccessibleWalletAsync(request.WalletId, cancellationToken);
 
-        // [start, end+1) computed in UTC so the end day is included.
         var fromUtc = ToUtcDate(request.StartDate);
         var toUtc = ToUtcDate(request.EndDate).AddDays(1);
 
@@ -68,9 +59,6 @@ public sealed class ReportService : IReportService
         return wallet;
     }
 
-    /// <summary>
-    /// A wallet is accessible when it is shared (no owner), owned by the caller, or the caller is an admin.
-    /// </summary>
     private void EnsureCanAccess(WalletEntity wallet)
     {
         bool canAccess = wallet.OwnerUserId is null
@@ -113,10 +101,6 @@ public sealed class ReportService : IReportService
         Note = operation.Note
     };
 
-    /// <summary>
-    /// Normalizes an inbound date to midnight UTC so range bounds carry <see cref="DateTimeKind.Utc"/>,
-    /// satisfying the Npgsql <c>timestamptz</c> requirement.
-    /// </summary>
     private static DateTime ToUtcDate(DateTime date)
     {
         var utc = date.Kind switch

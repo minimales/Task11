@@ -7,12 +7,7 @@ using task11.Data.Entities;
 
 namespace task11.ApplicationCore.Services;
 
-/// <summary>
-/// Implements operation CRUD. Wallet ownership isolation is delegated to
-/// <see cref="IWalletService.EnsureCanAccessAsync"/>; amounts are converted to the wallet base
-/// currency via <see cref="ICurrencyConverter"/>; deletes are soft.
-/// </summary>
-public sealed class OperationService : IOperationService
+public class OperationService : IOperationService
 {
     private readonly IOperationRepository _operations;
     private readonly IWalletService _wallets;
@@ -28,7 +23,6 @@ public sealed class OperationService : IOperationService
         _currencyConverter = currencyConverter;
     }
 
-    /// <inheritdoc />
     public async Task<IReadOnlyList<OperationModel>> GetByWalletAsync(
         Guid walletId,
         CancellationToken cancellationToken = default)
@@ -39,18 +33,15 @@ public sealed class OperationService : IOperationService
         return operations.Select(o => Map(o, wallet.BaseCurrency)).ToList();
     }
 
-    /// <inheritdoc />
     public async Task<OperationModel> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var operation = await _operations.GetWithTypeAsync(id, cancellationToken)
                         ?? throw new NotFoundException("Operation", id);
 
-        // Ownership-check via the operation's wallet before returning any data.
         var wallet = await _wallets.EnsureCanAccessAsync(operation.WalletId, cancellationToken);
         return Map(operation, wallet.BaseCurrency);
     }
 
-    /// <inheritdoc />
     public async Task<OperationModel> CreateAsync(
         CreateOperationModel request,
         CancellationToken cancellationToken = default)
@@ -84,12 +75,10 @@ public sealed class OperationService : IOperationService
 
         await _operations.AddAsync(operation, cancellationToken);
 
-        // Re-attach the resolved type so the response carries name/kind without a reload.
         operation.OperationType = type;
         return Map(operation, wallet.BaseCurrency);
     }
 
-    /// <inheritdoc />
     public async Task<OperationModel> UpdateAsync(
         Guid id,
         UpdateOperationModel request,
@@ -120,7 +109,7 @@ public sealed class OperationService : IOperationService
         operation.Amount = amount;
         operation.OccurredAtUtc = occurredAtUtc;
         operation.Note = note;
-        // The tracked navigation must not drag a second OperationType insert into the update.
+
         operation.OperationType = null!;
 
         await _operations.UpdateAsync(operation, cancellationToken);
@@ -129,22 +118,16 @@ public sealed class OperationService : IOperationService
         return Map(operation, wallet.BaseCurrency);
     }
 
-    /// <inheritdoc />
     public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var operation = await _operations.GetByIdAsync(id, cancellationToken)
                         ?? throw new NotFoundException("Operation", id);
 
-        // Ownership check before mutating: a guessed id never deletes another user's data.
         await _wallets.EnsureCanAccessAsync(operation.WalletId, cancellationToken);
 
         await _operations.SoftDeleteAsync(operation, cancellationToken);
     }
 
-    /// <summary>
-    /// Applies currency conversion when a differing transaction currency is supplied.
-    /// Returns the amount in the wallet base currency and the (possibly augmented) note.
-    /// </summary>
     private async Task<(decimal Amount, string? Note)> ApplyConversionAsync(
         decimal originalAmount,
         string? transactionCurrency,
@@ -153,7 +136,7 @@ public sealed class OperationService : IOperationService
         string? userNote,
         CancellationToken cancellationToken)
     {
-        // No conversion when currency is omitted or already the base currency.
+
         if (string.IsNullOrWhiteSpace(transactionCurrency)
             || string.Equals(transactionCurrency, baseCurrency, StringComparison.OrdinalIgnoreCase))
         {
@@ -177,7 +160,6 @@ public sealed class OperationService : IOperationService
         return (converted, note);
     }
 
-    /// <summary>Coerces an inbound date to UTC for the timestamptz column.</summary>
     private static DateTime ToUtc(DateTime value) => value.Kind switch
     {
         DateTimeKind.Utc => value,
@@ -185,7 +167,6 @@ public sealed class OperationService : IOperationService
         _ => DateTime.SpecifyKind(value, DateTimeKind.Utc)
     };
 
-    /// <summary>Maps an entity to its response model. Never exposes the entity directly.</summary>
     private static OperationModel Map(FinancialOperationEntity operation, string currency) => new()
     {
         Id = operation.Id,

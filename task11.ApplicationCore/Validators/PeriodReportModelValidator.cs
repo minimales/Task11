@@ -3,11 +3,7 @@ using task11.ApplicationCore.Models;
 
 namespace task11.ApplicationCore.Validators;
 
-/// <summary>
-/// Validates <see cref="PeriodReportModel"/>: the wallet id is required, the start must
-/// not be after the end, and the span must not exceed 366 days.
-/// </summary>
-public sealed class PeriodReportModelValidator : AbstractValidator<PeriodReportModel>
+public class PeriodReportModelValidator : AbstractValidator<PeriodReportModel>
 {
     private const int _maxSpanDays = 366;
 
@@ -30,7 +26,7 @@ public sealed class PeriodReportModelValidator : AbstractValidator<PeriodReportM
 
     private static bool HaveSpanWithinLimit(PeriodReportModel request)
     {
-        // Inclusive span: a single day counts as 1 day.
+
         var spanDays = (request.EndDate.Date - request.StartDate.Date).TotalDays + 1;
         return spanDays <= _maxSpanDays;
     }

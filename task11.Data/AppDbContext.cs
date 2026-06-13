@@ -5,11 +5,6 @@ using task11.Data.Interceptors;
 
 namespace task11.Data;
 
-/// <summary>
-/// The application's EF Core context. Entity configurations are applied from the assembly,
-/// audit/soft-delete are handled by registered save interceptors, and a global query filter
-/// hides soft-deleted rows.
-/// </summary>
 public class AppDbContext : DbContext
 {
     private readonly string _connectionString;

@@ -5,19 +5,11 @@ using task11.ApplicationCore;
 using task11.ApplicationCore.Currency;
 using task11.Data;
 
-/// <summary>
-/// Behavioural tests for <see cref="CurrencyConverter"/>: non-UAH pairs route to Frankfurter,
-/// UAH pairs route to PrivatBank (with correct direction), the <c>(from,to,date)</c> cache prevents
-/// a second upstream call, and a hard upstream failure surfaces as <see cref="FxUnavailableException"/>
-/// (never a silent unconverted fallback). HTTP is faked with a hand-rolled
-/// <see cref="StubHttpMessageHandler"/> (no Moq).
-/// </summary>
 [TestClass]
-public sealed class CurrencyConverterTests
+public class CurrencyConverterTests
 {
     private static readonly DateTime _rateDate = new(2024, 1, 15, 0, 0, 0, DateTimeKind.Utc);
 
-    // PrivatBank exchange_rates payload: EUR quoted at 48.3734 UAH (NBU official rate) for the date.
     private const string _privatBankEurJson =
         "{\"date\":\"15.01.2024\",\"bank\":\"PB\",\"baseCurrency\":980,\"baseCurrencyLit\":\"UAH\"," +
         "\"exchangeRate\":[{\"baseCurrency\":\"UAH\",\"currency\":\"EUR\"," +
@@ -48,7 +40,6 @@ public sealed class CurrencyConverterTests
         Assert.AreEqual(1.1m, first);
         Assert.AreEqual(1.1m, second);
 
-        // Exactly one upstream call despite two GetRateAsync invocations for the same (from,to,date).
         Assert.AreEqual(1, frankfurter.CallCount);
     }
 
@@ -61,10 +52,8 @@ public sealed class CurrencyConverterTests
 
         decimal rate = await sut.GetRateAsync("EUR", "UAH", _rateDate);
 
-        // 1 EUR = 48.3734 UAH.
         Assert.AreEqual(48.3734m, rate);
 
-        // Frankfurter is never consulted for a UAH pair.
         Assert.AreEqual(0, frankfurter.CallCount);
     }
 
@@ -77,7 +66,6 @@ public sealed class CurrencyConverterTests
 
         decimal rate = await sut.GetRateAsync("UAH", "EUR", _rateDate);
 
-        // UAH -> EUR is the reciprocal of the UAH-per-EUR quote.
         Assert.AreEqual(1m / 48.3734m, rate);
     }
 
@@ -91,7 +79,6 @@ public sealed class CurrencyConverterTests
         (decimal converted, decimal rate) = await sut.ConvertAsync(100m, "EUR", "UAH", _rateDate);
 
         Assert.AreEqual(48.3734m, rate);
-        // 100 * 48.3734 = 4837.34
         Assert.AreEqual(4837.34m, converted);
     }
 
@@ -118,7 +105,6 @@ public sealed class CurrencyConverterTests
     [TestMethod]
     public async Task Test_CurrencyConverter_GetRateAsync_MissingTargetCurrency_ThrowsFxUnavailable()
     {
-        // Valid JSON but the requested symbol is absent from rates -> never return unconverted.
         StubHttpMessageHandler handler = StubHttpMessageHandler.Json(
             "{\"amount\":1.0,\"base\":\"EUR\",\"date\":\"2024-01-15\",\"rates\":{}}");
         CurrencyConverter sut = CreateSut(handler);
@@ -131,7 +117,6 @@ public sealed class CurrencyConverterTests
     public async Task Test_CurrencyConverter_GetRateAsync_UahPairMissingCurrency_ThrowsFxUnavailable()
     {
         StubHttpMessageHandler frankfurter = StubHttpMessageHandler.Json("{}");
-        // PrivatBank payload without the requested currency -> 503, never a silent fallback.
         StubHttpMessageHandler privat = StubHttpMessageHandler.Json(
             "{\"date\":\"15.01.2024\",\"baseCurrencyLit\":\"UAH\",\"exchangeRate\":[]}");
         CurrencyConverter sut = CreateSut(frankfurter, privat);
@@ -158,18 +143,13 @@ public sealed class CurrencyConverterTests
 
         MemoryCache cache = new(new MemoryCacheOptions());
 
-        // "Now" well after the rate date so cached past rates persist indefinitely.
         FixedClock clock = new(new DateTime(2024, 6, 1, 0, 0, 0, DateTimeKind.Utc));
 
         return new CurrencyConverter(frankfurter, privatBank, cache, clock);
     }
 }
 
-/// <summary>
-/// Hand-rolled <see cref="HttpMessageHandler"/> stub (no Moq): returns a canned response, a status
-/// code, or throws a canned exception, and records how many times it was invoked.
-/// </summary>
-internal sealed class StubHttpMessageHandler : HttpMessageHandler
+internal class StubHttpMessageHandler : HttpMessageHandler
 {
     private readonly Func<HttpResponseMessage>? _responseFactory;
     private readonly Exception? _exception;

@@ -3,11 +3,7 @@ using task11.ApplicationCore.Models;
 
 namespace task11.ApplicationCore.Validators;
 
-/// <summary>
-/// Validates <see cref="CreateWalletModel"/>: name 1..100; currency, when supplied,
-/// must match ISO-4217 ^[A-Z]{3}$ (omit to default to "UAH").
-/// </summary>
-public sealed class CreateWalletModelValidator : AbstractValidator<CreateWalletModel>
+public class CreateWalletModelValidator : AbstractValidator<CreateWalletModel>
 {
     public CreateWalletModelValidator()
     {

@@ -4,15 +4,10 @@ using System.Text.Json.Serialization;
 
 namespace task11.ApplicationCore.Currency;
 
-/// <summary>
-/// Typed <see cref="HttpClient"/> over the Frankfurter API (ECB-sourced historical rates, no key).
-/// Issues <c>GET /v1/{yyyy-MM-dd}?base={from}&amp;symbols={to}</c> and parses <c>rates[to]</c>.
-/// Weekend/holiday dates resolve to the most recent prior business day's rate.
-/// </summary>
-public sealed class FrankfurterClient
+public class FrankfurterClient
 {
-    /// <summary>Shape of the Frankfurter response (<c>{ amount, base, date, rates: { CUR: 1.23 } }</c>).</summary>
-    private sealed class FrankfurterResponse
+
+    private class FrankfurterResponse
     {
         [JsonPropertyName("amount")]
         public decimal Amount { get; set; }
@@ -39,21 +34,13 @@ public sealed class FrankfurterClient
         _httpClient = httpClient;
     }
 
-    /// <summary>
-    /// Fetches the exchange rate to convert 1 unit of <paramref name="from"/> into
-    /// <paramref name="to"/> on the given <paramref name="date"/>.
-    /// </summary>
-    /// <exception cref="FxUnavailableException">
-    /// Thrown when the request fails (transient errors are retried by the Polly handler first),
-    /// the response cannot be parsed, or the requested target currency is absent from the payload.
-    /// </exception>
     public async Task<decimal> GetRateAsync(
         string from,
         string to,
         DateTime date,
         CancellationToken cancellationToken = default)
     {
-        // Frankfurter is keyed by exact calendar date; the request path is date-only.
+
         var datePath = date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
         var requestUri = $"/v1/{datePath}?base={Uri.EscapeDataString(from)}&symbols={Uri.EscapeDataString(to)}";
 
@@ -69,7 +56,7 @@ public sealed class FrankfurterClient
         }
         catch (TaskCanceledException ex) when (!cancellationToken.IsCancellationRequested)
         {
-            // Timeout (not caller-initiated cancellation).
+
             throw new FxUnavailableException(
                 $"The FX provider timed out for {from}->{to} on {datePath}.", ex);
         }

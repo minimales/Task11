@@ -5,12 +5,7 @@ using task11.Data.Entities;
 
 namespace task11.ApplicationCore.Services;
 
-/// <summary>
-/// Default <see cref="IOperationTypeService"/>. Enforces wallet ownership isolation through
-/// <see cref="IWalletService.EnsureCanAccessAsync"/>, keeps type names unique per wallet among
-/// non-deleted rows, and performs soft deletes.
-/// </summary>
-public sealed class OperationTypeService : IOperationTypeService
+public class OperationTypeService : IOperationTypeService
 {
     private readonly IOperationTypeRepository _repository;
     private readonly IWalletService _walletService;
@@ -21,7 +16,6 @@ public sealed class OperationTypeService : IOperationTypeService
         _walletService = walletService;
     }
 
-    /// <inheritdoc />
     public async Task<IReadOnlyList<OperationTypeModel>> GetByWalletAsync(
         Guid walletId,
         CancellationToken cancellationToken = default)
@@ -32,14 +26,12 @@ public sealed class OperationTypeService : IOperationTypeService
         return types.Select(Map).ToList();
     }
 
-    /// <inheritdoc />
     public async Task<OperationTypeModel> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var type = await GetOwnedTypeAsync(id, cancellationToken);
         return Map(type);
     }
 
-    /// <inheritdoc />
     public async Task<OperationTypeModel> CreateAsync(
         Guid walletId,
         CreateOperationTypeModel request,
@@ -68,7 +60,6 @@ public sealed class OperationTypeService : IOperationTypeService
         return Map(type);
     }
 
-    /// <inheritdoc />
     public async Task<OperationTypeModel> UpdateAsync(
         Guid id,
         UpdateOperationTypeModel request,
@@ -93,7 +84,6 @@ public sealed class OperationTypeService : IOperationTypeService
         return Map(type);
     }
 
-    /// <inheritdoc />
     public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var type = await GetOwnedTypeAsync(id, cancellationToken);
@@ -101,9 +91,6 @@ public sealed class OperationTypeService : IOperationTypeService
         await _repository.SoftDeleteAsync(type, cancellationToken);
     }
 
-    /// <summary>
-    /// Loads an operation type by id and verifies the caller may access its wallet.
-    /// </summary>
     private async Task<OperationTypeEntity> GetOwnedTypeAsync(Guid id, CancellationToken cancellationToken)
     {
         var type = await _repository.GetByIdAsync(id, cancellationToken)

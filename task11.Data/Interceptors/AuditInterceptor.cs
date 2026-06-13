@@ -4,11 +4,7 @@ using task11.Data.Entities;
 
 namespace task11.Data.Interceptors;
 
-/// <summary>
-/// Stamps <see cref="BaseEntity.CreatedAtUtc"/> on insert and <see cref="BaseEntity.UpdatedAtUtc"/>
-/// on update using the injected <see cref="IClock"/>. All timestamps are UTC.
-/// </summary>
-public sealed class AuditInterceptor : SaveChangesInterceptor
+public class AuditInterceptor : SaveChangesInterceptor
 {
     private readonly IClock _clock;
 

@@ -8,10 +8,7 @@ using task11.Data.Entities;
 
 namespace task11.ApplicationCore.Auth;
 
-/// <summary>
-/// Issues HS256 JWTs with <c>sub</c>, <c>name</c>, <c>role</c>, <c>jti</c> and <c>exp</c> claims.
-/// </summary>
-public sealed class JwtTokenGenerator
+public class JwtTokenGenerator
 {
     private readonly JwtSettings _settings;
     private readonly IClock _clock;
@@ -22,7 +19,6 @@ public sealed class JwtTokenGenerator
         _clock = clock;
     }
 
-    /// <summary>Generates a signed JWT for the given user and returns the token and its UTC expiry.</summary>
     public (string Token, DateTime ExpiresAtUtc) Generate(UserEntity user)
     {
         ArgumentNullException.ThrowIfNull(user);

@@ -39,7 +39,6 @@ try
 
     var config = builder.Configuration;
 
-    // --- Persistence: a single DbContextFactory (connection string + UseInMemory flag + clock). ---
     string connectionString = config.GetConnectionString("Default")
         ?? "Host=localhost;Port=5432;Database=finance;Username=finance;Password=finance";
     bool useInMemory = config.GetValue<bool>("UseInMemory");
@@ -48,7 +47,6 @@ try
     builder.Services.AddSingleton(sp =>
         new DbContextFactory(connectionString, useInMemory, sp.GetRequiredService<IClock>()));
 
-    // --- JWT authentication: bind settings, register auth helpers, install bearer + fallback policy. ---
     var jwtSettings = new JwtSettings();
     config.GetSection(JwtSettings.SectionName).Bind(jwtSettings);
 
@@ -91,13 +89,11 @@ try
 
     builder.Services.AddAuthorization(options =>
     {
-        // Global fallback policy: a forgotten [Authorize] fails closed.
         options.FallbackPolicy = new AuthorizationPolicyBuilder()
             .RequireAuthenticatedUser()
             .Build();
     });
 
-    // --- Repositories + services (all Scoped). ---
     builder.Services.AddScoped<IUserRepository, UserRepository>();
     builder.Services.AddScoped<IWalletRepository, WalletRepository>();
     builder.Services.AddScoped<IOperationTypeRepository, OperationTypeRepository>();
@@ -111,7 +107,6 @@ try
     builder.Services.AddScoped<IOperationService, OperationService>();
     builder.Services.AddScoped<IReportService, ReportService>();
 
-    // --- Currency: FX options, memory cache, typed HttpClients (Frankfurter + PrivatBank) with Polly retry. ---
     builder.Services.AddOptions<FxOptions>()
         .BindConfiguration(FxOptions.SectionName)
         .ValidateOnStart();
@@ -148,11 +143,9 @@ try
 
     builder.Services.AddScoped<ICurrencyConverter, CurrencyConverter>();
 
-    // --- Validation: scan the ApplicationCore validators assembly + SharpGrip auto-validation. ---
     builder.Services.AddValidatorsFromAssemblyContaining<LoginModelValidator>(includeInternalTypes: true);
     builder.Services.AddFluentValidationAutoValidation(c => c.DisableBuiltInModelValidation = true);
 
-    // --- Swagger with a JWT bearer security scheme. ---
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddSwaggerGen(options =>
     {
@@ -189,10 +182,6 @@ try
 
     var app = builder.Build();
 
-    // Middleware pipeline. CorrelationId + Exception stay outermost. Swagger is mounted before
-    // authentication so /swagger is reachable anonymously (the global fallback authz policy would
-    // otherwise 401 it). Request/response logging runs AFTER authentication so the UserId log scope
-    // reflects the authenticated user, while still wrapping authorization to capture 401/403 results.
     app.UseMiddleware<CorrelationIdMiddleware>();
     app.UseMiddleware<ExceptionHandlingMiddleware>();
 
@@ -222,7 +211,6 @@ finally
     Log.CloseAndFlush();
 }
 
-/// <summary>Builds the Serilog logger from configuration (call before host build).</summary>
 static void ConfigureSerilog(IConfiguration configuration)
 {
     string minimumLevel = configuration["Serilog:MinimumLevel"] ?? "Information";
@@ -240,11 +228,6 @@ static void ConfigureSerilog(IConfiguration configuration)
         .CreateLogger();
 }
 
-/// <summary>
-/// Transient-fault retry policy for the FX HttpClients: <paramref name="retryCount"/> attempts
-/// (from <c>Fx:RetryCount</c>, default 3) with exponential backoff. Handles 5xx/408 responses and
-/// <see cref="HttpRequestException"/>/timeouts.
-/// </summary>
 static IAsyncPolicy<HttpResponseMessage> FxRetryPolicy(int retryCount) =>
     HttpPolicyExtensions
         .HandleTransientHttpError()
@@ -252,10 +235,6 @@ static IAsyncPolicy<HttpResponseMessage> FxRetryPolicy(int retryCount) =>
             retryCount: retryCount > 0 ? retryCount : 3,
             sleepDurationProvider: attempt => TimeSpan.FromSeconds(Math.Pow(2, attempt)));
 
-/// <summary>
-/// Applies pending migrations with a Polly retry (the database may still be starting),
-/// then runs the idempotent seeder (default admin/admin user + shared wallet).
-/// </summary>
 static async Task MigrateAndSeedAsync(WebApplication app)
 {
     var logger = app.Services.GetRequiredService<ILogger<Program>>();
@@ -281,10 +260,6 @@ static async Task MigrateAndSeedAsync(WebApplication app)
     await SeedAsync(app.Services);
 }
 
-/// <summary>
-/// Idempotent seed: when no users exist, creates the default admin user (admin/admin) and a
-/// shared wallet. Uses the <see cref="DbContextFactory"/> directly (the context is not in DI).
-/// </summary>
 static async Task SeedAsync(IServiceProvider services)
 {
     var factory = services.GetRequiredService<DbContextFactory>();
@@ -333,5 +308,4 @@ static async Task SeedAsync(IServiceProvider services)
         adminUsername, sharedWallet.Name);
 }
 
-/// <summary>Exposed so integration tests can reference the host.</summary>
 public partial class Program { }

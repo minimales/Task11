@@ -4,8 +4,7 @@ using task11.Data.Entities;
 
 namespace task11.Data.EntityConfigurations;
 
-/// <summary>EF mapping for <see cref="FinancialOperationEntity"/>.</summary>
-public sealed class FinancialOperationEntityConfiguration : IEntityTypeConfiguration<FinancialOperationEntity>
+public class FinancialOperationEntityConfiguration : IEntityTypeConfiguration<FinancialOperationEntity>
 {
     public void Configure(EntityTypeBuilder<FinancialOperationEntity> builder)
     {
@@ -22,7 +21,6 @@ public sealed class FinancialOperationEntityConfiguration : IEntityTypeConfigura
         builder.Property(o => o.Note)
             .HasMaxLength(1000);
 
-        // Fast scoped queries and report ranges.
         builder.HasIndex(o => new { o.WalletId, o.OccurredAtUtc });
 
         builder.HasIndex(o => o.OperationTypeId);

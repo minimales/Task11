@@ -4,8 +4,7 @@ using task11.Data.Entities;
 
 namespace task11.Data.EntityConfigurations;
 
-/// <summary>EF mapping for <see cref="WalletEntity"/>.</summary>
-public sealed class WalletEntityConfiguration : IEntityTypeConfiguration<WalletEntity>
+public class WalletEntityConfiguration : IEntityTypeConfiguration<WalletEntity>
 {
     public void Configure(EntityTypeBuilder<WalletEntity> builder)
     {

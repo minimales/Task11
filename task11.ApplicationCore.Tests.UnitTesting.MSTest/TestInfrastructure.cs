@@ -7,12 +7,7 @@ using task11.ApplicationCore.Services.Abstractions;
 using task11.Data;
 using task11.Data.Entities;
 
-/// <summary>
-/// In-memory <see cref="DbContextFactory"/> subclass pointing at a uniquely-named
-/// EF Core InMemory store (mirrors the task10 pattern). A fixed clock is supplied so the
-/// audit/soft-delete interceptors stamp deterministic UTC timestamps.
-/// </summary>
-public sealed class InMemoryDbContextFactory : DbContextFactory
+public class InMemoryDbContextFactory : DbContextFactory
 {
     private readonly string _databaseName;
     private readonly IClock _clock;
@@ -35,19 +30,14 @@ public sealed class InMemoryDbContextFactory : DbContextFactory
     }
 }
 
-/// <summary>A deterministic <see cref="IClock"/> returning a fixed UTC instant.</summary>
-internal sealed class FixedClock : IClock
+internal class FixedClock : IClock
 {
     public DateTime UtcNow { get; }
 
     public FixedClock(DateTime utcNow) => UtcNow = utcNow;
 }
 
-/// <summary>
-/// Hand-rolled <see cref="ICurrencyConverter"/> fake (no Moq). Records the last
-/// <c>ConvertAsync</c> arguments and a call count, and returns canned values.
-/// </summary>
-internal sealed class FakeCurrencyConverter : ICurrencyConverter
+internal class FakeCurrencyConverter : ICurrencyConverter
 {
     private readonly decimal _converted;
     private readonly decimal _rate;
@@ -87,11 +77,7 @@ internal sealed class FakeCurrencyConverter : ICurrencyConverter
     }
 }
 
-/// <summary>
-/// Hand-rolled <see cref="IWalletService"/> fake (no Moq). Only <see cref="EnsureCanAccessAsync"/>
-/// is exercised by the operation tests; the remaining members are not implemented.
-/// </summary>
-internal sealed class FakeWalletService : IWalletService
+internal class FakeWalletService : IWalletService
 {
     private readonly WalletEntity _wallet;
 
@@ -121,11 +107,7 @@ internal sealed class FakeWalletService : IWalletService
         => throw new NotImplementedException();
 }
 
-/// <summary>
-/// Hand-rolled <see cref="IOperationRepository"/> fake (no Moq) backed by an in-memory list,
-/// honouring soft delete so a deleted operation disappears from subsequent reads.
-/// </summary>
-internal sealed class FakeOperationRepository : IOperationRepository
+internal class FakeOperationRepository : IOperationRepository
 {
     private readonly List<FinancialOperationEntity> _operations = new();
     private readonly List<OperationTypeEntity> _types = new();
@@ -172,10 +154,7 @@ internal sealed class FakeOperationRepository : IOperationRepository
     }
 }
 
-/// <summary>
-/// Hand-rolled <see cref="IWalletRepository"/> fake (no Moq) returning a single seeded wallet.
-/// </summary>
-internal sealed class FakeWalletRepository : IWalletRepository
+internal class FakeWalletRepository : IWalletRepository
 {
     private readonly WalletEntity _wallet;
 
@@ -200,11 +179,7 @@ internal sealed class FakeWalletRepository : IWalletRepository
         => throw new NotImplementedException();
 }
 
-/// <summary>
-/// Hand-rolled <see cref="IReportRepository"/> fake (no Moq) returning canned totals/operations
-/// and capturing the UTC range passed by the service.
-/// </summary>
-internal sealed class FakeReportRepository : IReportRepository
+internal class FakeReportRepository : IReportRepository
 {
     private readonly ReportTotals _totals;
     private readonly IReadOnlyList<FinancialOperationEntity> _operations;
@@ -229,8 +204,7 @@ internal sealed class FakeReportRepository : IReportRepository
         => Task.FromResult(_operations);
 }
 
-/// <summary>Hand-rolled <see cref="ICurrentUser"/> fake (no Moq).</summary>
-internal sealed class FakeCurrentUser : ICurrentUser
+internal class FakeCurrentUser : ICurrentUser
 {
     public Guid? UserId { get; }
     public string? Role => IsAdmin ? "Admin" : null;

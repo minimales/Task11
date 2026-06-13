@@ -4,17 +4,10 @@ using System.Text.Json.Serialization;
 
 namespace task11.ApplicationCore.Currency;
 
-/// <summary>
-/// Typed <see cref="HttpClient"/> over the PrivatBank historical exchange-rate API (free, no key).
-/// Issues <c>GET /p24api/exchange_rates?json&amp;date=dd.MM.yyyy</c> and reads the NBU official rate
-/// (<c>saleRateNB</c>, which equals <c>purchaseRateNB</c>) — the number of UAH per 1 unit of the
-/// foreign currency on that date. Used for any conversion involving UAH, which the ECB-based
-/// Frankfurter feed does not publish (e.g. the task's hryvnia base-currency example).
-/// </summary>
-public sealed class PrivatBankClient
+public class PrivatBankClient
 {
-    /// <summary>Shape of the PrivatBank <c>exchange_rates</c> response.</summary>
-    private sealed class PrivatBankResponse
+
+    private class PrivatBankResponse
     {
         [JsonPropertyName("date")] public string? Date { get; set; }
 
@@ -23,11 +16,10 @@ public sealed class PrivatBankClient
         [JsonPropertyName("exchangeRate")] public List<ExchangeRateEntry>? ExchangeRate { get; set; }
     }
 
-    private sealed class ExchangeRateEntry
+    private class ExchangeRateEntry
     {
         [JsonPropertyName("currency")] public string? Currency { get; set; }
 
-        /// <summary>NBU official rate: UAH per 1 unit of <see cref="Currency"/> (== PurchaseRateNB).</summary>
         [JsonPropertyName("saleRateNB")] public decimal SaleRateNB { get; set; }
 
         [JsonPropertyName("purchaseRateNB")] public decimal PurchaseRateNB { get; set; }
@@ -37,7 +29,6 @@ public sealed class PrivatBankClient
         [JsonPropertyName("purchaseRate")] public decimal? PurchaseRate { get; set; }
     }
 
-    /// <summary>ISO code of the Ukrainian hryvnia — PrivatBank's base currency.</summary>
     public const string Uah = "UAH";
 
     private static readonly JsonSerializerOptions _serializerOptions = new()
@@ -52,15 +43,6 @@ public sealed class PrivatBankClient
         _httpClient = httpClient;
     }
 
-    /// <summary>
-    /// Returns the rate to convert 1 unit of <paramref name="from"/> into <paramref name="to"/> on
-    /// <paramref name="date"/>. Exactly one of the two currencies must be UAH (the other any
-    /// PrivatBank-listed currency).
-    /// </summary>
-    /// <exception cref="FxUnavailableException">
-    /// Thrown on request/parse failure, when the currency is not listed for the date, or when the
-    /// pair is not a UAH/foreign pair. An unconverted amount is never returned silently.
-    /// </exception>
     public async Task<decimal> GetRateAsync(
         string from,
         string to,
@@ -72,7 +54,7 @@ public sealed class PrivatBankClient
 
         if (fromUah == toUah)
         {
-            // This client only resolves a single foreign currency against UAH.
+
             throw new FxUnavailableException(
                 $"PrivatBank only converts a foreign currency against UAH (got {from}->{to}).");
         }
@@ -80,8 +62,6 @@ public sealed class PrivatBankClient
         string foreign = fromUah ? to : from;
         decimal uahPerForeign = await GetUahPerUnitAsync(foreign, date, cancellationToken);
 
-        // PrivatBank quotes UAH per 1 unit of the foreign currency:
-        //   foreign -> UAH : multiply by the quote;  UAH -> foreign : divide by the quote.
         return toUah ? uahPerForeign : 1m / uahPerForeign;
     }
 
@@ -126,7 +106,6 @@ public sealed class PrivatBankClient
         var entry = payload?.ExchangeRate?.FirstOrDefault(
             r => string.Equals(r.Currency, currency, StringComparison.OrdinalIgnoreCase));
 
-        // The NBU official rate is present for every standard currency on a banking date.
         if (entry is null || entry.SaleRateNB <= 0m)
         {
             throw new FxUnavailableException(

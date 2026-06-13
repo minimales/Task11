@@ -3,20 +3,8 @@ using Microsoft.AspNetCore.Mvc;
 using task11.ApplicationCore.Models;
 using task11.ApplicationCore.Services.Abstractions;
 
-// Shared test infrastructure for the Web (controller) unit tests.
-//
-// The controllers under test derive from ControllerBase and depend only on service
-// abstractions, never on the DbContext. So instead of Moq we hand-roll tiny fake
-// service implementations that record their inputs and return canned results, and we
-// attach a DefaultHttpContext via the WithTestContext extension (the task10 pattern,
-// adapted from Controller to ControllerBase).
-
 internal static class ControllerTestExtensions
 {
-    /// <summary>
-    /// Attaches a <see cref="DefaultHttpContext"/> so action methods that touch
-    /// <c>HttpContext</c>/<c>Response</c> (e.g. status codes via the result executors) work.
-    /// </summary>
     public static T WithTestContext<T>(this T controller) where T : ControllerBase
     {
         ArgumentNullException.ThrowIfNull(controller);
@@ -27,11 +15,7 @@ internal static class ControllerTestExtensions
     }
 }
 
-/// <summary>
-/// Hand-rolled fake <see cref="IAuthService"/>. Returns the configured token only when the
-/// supplied credentials match; otherwise returns null (the bad-credentials → 401 contract).
-/// </summary>
-internal sealed class FakeAuthService : IAuthService
+internal class FakeAuthService : IAuthService
 {
     private readonly string _validUsername;
     private readonly string _validPassword;
@@ -56,8 +40,7 @@ internal sealed class FakeAuthService : IAuthService
     }
 }
 
-/// <summary>Hand-rolled fake <see cref="IUserService"/> returning canned values.</summary>
-internal sealed class FakeUserService : IUserService
+internal class FakeUserService : IUserService
 {
     private readonly IReadOnlyList<UserModel> _users;
 
@@ -84,11 +67,7 @@ internal sealed class FakeUserService : IUserService
         => Task.CompletedTask;
 }
 
-/// <summary>
-/// Hand-rolled fake <see cref="IReportService"/>. Records the requests it receives and returns
-/// the configured report so controller wiring can be asserted without a database.
-/// </summary>
-internal sealed class FakeReportService : IReportService
+internal class FakeReportService : IReportService
 {
     private readonly ReportModel _report;
 
@@ -110,8 +89,7 @@ internal sealed class FakeReportService : IReportService
     }
 }
 
-/// <summary>Hand-rolled fake <see cref="IWalletService"/> returning canned values.</summary>
-internal sealed class FakeWalletService : IWalletService
+internal class FakeWalletService : IWalletService
 {
     private const string _defaultBaseCurrency = "UAH";
 
@@ -155,11 +133,7 @@ internal sealed class FakeWalletService : IWalletService
         => Task.FromResult(new task11.Data.Entities.WalletEntity { Id = walletId });
 }
 
-/// <summary>
-/// Hand-rolled fake <see cref="IOperationService"/>. Records the requests it receives and
-/// returns the configured collections/operation so controller wiring can be asserted.
-/// </summary>
-internal sealed class FakeOperationService : IOperationService
+internal class FakeOperationService : IOperationService
 {
     private readonly IReadOnlyList<OperationModel> _byWallet;
     private readonly OperationModel _single;

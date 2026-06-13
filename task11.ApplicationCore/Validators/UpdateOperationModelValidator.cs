@@ -3,11 +3,7 @@ using task11.ApplicationCore.Models;
 
 namespace task11.ApplicationCore.Validators;
 
-/// <summary>
-/// Validates <see cref="UpdateOperationModel"/> with the same rules as creation
-/// (the wallet is fixed by the existing operation, so it is not part of the payload).
-/// </summary>
-public sealed class UpdateOperationModelValidator : AbstractValidator<UpdateOperationModel>
+public class UpdateOperationModelValidator : AbstractValidator<UpdateOperationModel>
 {
     public UpdateOperationModelValidator()
     {

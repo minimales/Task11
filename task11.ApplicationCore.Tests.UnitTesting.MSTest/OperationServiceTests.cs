@@ -3,14 +3,8 @@ using task11.ApplicationCore.Services;
 using task11.Data.Entities;
 using task11.Data.Entities.Enums;
 
-/// <summary>
-/// Behavioural tests for <see cref="OperationService"/>: FX conversion + audit-note append (with the
-/// arrow), the no-FX short circuit when the transaction currency equals (or is omitted relative to)
-/// the wallet base, and soft delete removing the row from subsequent reads. Collaborators are
-/// hand-rolled fakes (no Moq).
-/// </summary>
 [TestClass]
-public sealed class OperationServiceTests
+public class OperationServiceTests
 {
     private static readonly Guid _walletId = Guid.Parse("11111111-1111-1111-1111-111111111111");
     private static readonly Guid _typeId = Guid.Parse("33333333-3333-3333-3333-333333333333");
@@ -40,7 +34,6 @@ public sealed class OperationServiceTests
         FakeOperationRepository repo = new();
         repo.SeedType(IncomeType());
         FakeWalletService wallets = new(wallet);
-        // 100 EUR @ 40.5 -> 4050.00 UAH
         FakeCurrencyConverter fx = new(converted: 4050m, rate: 40.5m);
 
         OperationService service = new(repo, wallets, fx);
@@ -67,7 +60,6 @@ public sealed class OperationServiceTests
         Assert.AreEqual(4050m, repo.LastAdded!.Amount);
         Assert.AreEqual(DateTimeKind.Utc, repo.LastAdded!.OccurredAtUtc.Kind);
 
-        // FX was consulted exactly once with the original amount/currency/date.
         Assert.AreEqual(1, fx.ConvertCallCount);
         Assert.AreEqual(100m, fx.LastAmount);
         Assert.AreEqual("EUR", fx.LastFrom);
@@ -173,7 +165,6 @@ public sealed class OperationServiceTests
         FakeWalletService wallets = new(wallet);
         FakeCurrencyConverter fx = new(converted: 0m, rate: 0m);
 
-        // Seed a live operation directly through AddAsync so the wallet listing returns it pre-delete.
         FinancialOperationEntity operation = new()
         {
             Id = operationId,

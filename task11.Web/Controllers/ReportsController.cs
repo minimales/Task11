@@ -5,15 +5,11 @@ using task11.ApplicationCore.Services.Abstractions;
 
 namespace task11.Web.Controllers;
 
-/// <summary>
-/// Read-only financial reports. Totals are computed server-side over UTC date ranges;
-/// wallet access is enforced in the service layer.
-/// </summary>
 [ApiController]
 [Authorize]
 [Route("api/reports")]
 [Produces("application/json")]
-public sealed class ReportsController : ControllerBase
+public class ReportsController : ControllerBase
 {
     private readonly IReportService _reportService;
 
@@ -22,9 +18,6 @@ public sealed class ReportsController : ControllerBase
         _reportService = reportService;
     }
 
-    /// <summary>
-    /// Returns a single-day report for the UTC range <c>[date, date+1)</c>.
-    /// </summary>
     [HttpGet("daily")]
     [ProducesResponseType(typeof(ReportModel), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
@@ -37,9 +30,6 @@ public sealed class ReportsController : ControllerBase
         return Ok(report);
     }
 
-    /// <summary>
-    /// Returns a date-range report for the UTC range <c>[startDate, endDate+1)</c>.
-    /// </summary>
     [HttpGet("period")]
     [ProducesResponseType(typeof(ReportModel), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]

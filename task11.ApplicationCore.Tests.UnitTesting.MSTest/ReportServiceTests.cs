@@ -6,14 +6,8 @@ using task11.Data;
 using task11.Data.Entities;
 using task11.Data.Entities.Enums;
 
-/// <summary>
-/// Behavioural tests for <see cref="ReportService"/>: income/expense/net totals are correct (net can
-/// go negative) and soft-deleted operations are excluded from the aggregates. The soft-delete case
-/// runs end-to-end against the real <see cref="ReportRepository"/> + EF Core InMemory store so the
-/// global query filter is exercised. Other collaborators are hand-rolled fakes (no Moq).
-/// </summary>
 [TestClass]
-public sealed class ReportServiceTests
+public class ReportServiceTests
 {
     private static readonly Guid _walletId = Guid.Parse("22222222-2222-2222-2222-222222222222");
 
@@ -99,8 +93,6 @@ public sealed class ReportServiceTests
     [TestMethod]
     public async Task Test_ReportService_GetDailyAsync_ExcludesSoftDeletedOperations_FromTotalsAndOperations()
     {
-        // Real InMemory context + real ReportRepository so the global soft-delete query filter
-        // is exercised end-to-end.
         InMemoryDbContextFactory factory = new(
             nameof(Test_ReportService_GetDailyAsync_ExcludesSoftDeletedOperations_FromTotalsAndOperations));
 
@@ -114,11 +106,9 @@ public sealed class ReportServiceTests
             db.OperationTypes.Add(incomeType);
             db.OperationTypes.Add(expenseType);
 
-            // Live operations.
             db.FinancialOperations.Add(Operation(incomeType, 1000m, day));
             db.FinancialOperations.Add(Operation(expenseType, 300m, day));
 
-            // Soft-deleted operations (must be excluded by the global query filter).
             db.FinancialOperations.Add(Operation(incomeType, 9999m, day, isDeleted: true));
             db.FinancialOperations.Add(Operation(expenseType, 8888m, day, isDeleted: true));
 
@@ -135,7 +125,6 @@ public sealed class ReportServiceTests
 
         ReportModel result = await service.GetDailyAsync(new DailyReportModel { WalletId = _walletId, Date = day });
 
-        // Deleted rows are not counted in totals, net, or the operations list.
         Assert.AreEqual(1000m, result.TotalIncome);
         Assert.AreEqual(300m, result.TotalExpense);
         Assert.AreEqual(700m, result.NetResult);

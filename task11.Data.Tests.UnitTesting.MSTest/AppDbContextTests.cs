@@ -168,13 +168,11 @@ public class AppDbContextTests
             context.SaveChanges();
             walletId = wallet.Id;
 
-            // The interceptor rewrites a physical delete into a soft delete.
             context.Wallets.Remove(wallet);
             context.SaveChanges();
         }
 
         using AppDbContext read = InMemory(db);
-        // Global query filter hides IsDeleted == true rows from all reads.
         Assert.AreEqual(0, read.Wallets.Count());
         Assert.IsNull(read.Wallets.FirstOrDefault(w => w.Id == walletId));
     }

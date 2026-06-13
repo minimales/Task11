@@ -6,11 +6,7 @@ using task11.Data.Entities;
 
 namespace task11.ApplicationCore.Services;
 
-/// <summary>
-/// User administration: CRUD with PBKDF2 hashing and soft delete. Usernames are unique
-/// among non-deleted users; the password hash is never surfaced in a model.
-/// </summary>
-public sealed class UserService : IUserService
+public class UserService : IUserService
 {
     private readonly IUserRepository _users;
     private readonly PasswordHasher _passwordHasher;
@@ -21,14 +17,12 @@ public sealed class UserService : IUserService
         _passwordHasher = passwordHasher;
     }
 
-    /// <inheritdoc />
     public async Task<IReadOnlyList<UserModel>> GetAllAsync(CancellationToken cancellationToken = default)
     {
         var users = await _users.GetAllAsync(cancellationToken);
         return users.Select(Map).ToList();
     }
 
-    /// <inheritdoc />
     public async Task<UserModel> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var user = await _users.GetByIdAsync(id, cancellationToken)
@@ -37,7 +31,6 @@ public sealed class UserService : IUserService
         return Map(user);
     }
 
-    /// <inheritdoc />
     public async Task<UserModel> CreateAsync(CreateUserModel request, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
@@ -59,7 +52,6 @@ public sealed class UserService : IUserService
         return Map(user);
     }
 
-    /// <inheritdoc />
     public async Task<UserModel> UpdateAsync(Guid id, UpdateUserModel request, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
@@ -85,7 +77,6 @@ public sealed class UserService : IUserService
         return Map(user);
     }
 
-    /// <inheritdoc />
     public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var user = await _users.GetByIdAsync(id, cancellationToken)
@@ -94,7 +85,6 @@ public sealed class UserService : IUserService
         await _users.SoftDeleteAsync(user, cancellationToken);
     }
 
-    /// <summary>Maps a <see cref="UserEntity"/> to its public model (no password hash).</summary>
     private static UserModel Map(UserEntity user) => new()
     {
         Id = user.Id,

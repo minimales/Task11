@@ -3,11 +3,7 @@ using task11.ApplicationCore.Models;
 
 namespace task11.ApplicationCore.Validators;
 
-/// <summary>
-/// Validates <see cref="UpdateUserModel"/>: username 3..50 matching the allowed charset,
-/// role restricted to {Admin, User}, and password (when supplied) >= 6.
-/// </summary>
-public sealed class UpdateUserModelValidator : AbstractValidator<UpdateUserModel>
+public class UpdateUserModelValidator : AbstractValidator<UpdateUserModel>
 {
     private static readonly string[] _allowedRoles = { "Admin", "User" };
 
@@ -19,7 +15,6 @@ public sealed class UpdateUserModelValidator : AbstractValidator<UpdateUserModel
             .Matches("^[a-zA-Z0-9_.-]+$")
             .WithMessage("Username may only contain letters, digits, '_', '.' and '-'.");
 
-        // Password is optional on update; validate only when provided.
         RuleFor(x => x.Password!)
             .MinimumLength(6).WithMessage("Password must be at least 6 characters.")
             .When(x => !string.IsNullOrEmpty(x.Password));

@@ -5,13 +5,9 @@ using task11.ApplicationCore.Services.Abstractions;
 
 namespace task11.Web.Controllers;
 
-/// <summary>
-/// Authentication (login) and user administration. Login is anonymous; all user-management
-/// endpoints require the Admin role. Depends only on service abstractions — never on the DbContext.
-/// </summary>
 [ApiController]
 [Route("api")]
-public sealed class AuthController : ControllerBase
+public class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
     private readonly IUserService _userService;
@@ -22,7 +18,6 @@ public sealed class AuthController : ControllerBase
         _userService = userService;
     }
 
-    /// <summary>Authenticates a user and returns a signed JWT. Returns 401 on bad credentials.</summary>
     [AllowAnonymous]
     [HttpPost("auth/login")]
     [ProducesResponseType(typeof(AuthTokenModel), StatusCodes.Status200OK)]
@@ -35,7 +30,6 @@ public sealed class AuthController : ControllerBase
             : Ok(result);
     }
 
-    /// <summary>Lists all users (admin-only).</summary>
     [Authorize(Roles = "Admin")]
     [HttpGet("users")]
     [ProducesResponseType(typeof(IReadOnlyList<UserModel>), StatusCodes.Status200OK)]
@@ -45,7 +39,6 @@ public sealed class AuthController : ControllerBase
         return Ok(users);
     }
 
-    /// <summary>Gets a single user by id (admin-only).</summary>
     [Authorize(Roles = "Admin")]
     [HttpGet("users/{id:guid}")]
     [ProducesResponseType(typeof(UserModel), StatusCodes.Status200OK)]
@@ -56,7 +49,6 @@ public sealed class AuthController : ControllerBase
         return Ok(user);
     }
 
-    /// <summary>Creates a new user (admin-only).</summary>
     [Authorize(Roles = "Admin")]
     [HttpPost("users")]
     [ProducesResponseType(typeof(UserModel), StatusCodes.Status201Created)]
@@ -68,7 +60,6 @@ public sealed class AuthController : ControllerBase
         return CreatedAtAction(nameof(GetUser), new { id = user.Id }, user);
     }
 
-    /// <summary>Updates an existing user (admin-only).</summary>
     [Authorize(Roles = "Admin")]
     [HttpPut("users/{id:guid}")]
     [ProducesResponseType(typeof(UserModel), StatusCodes.Status200OK)]
@@ -81,7 +72,6 @@ public sealed class AuthController : ControllerBase
         return Ok(user);
     }
 
-    /// <summary>Soft-deletes a user (admin-only).</summary>
     [Authorize(Roles = "Admin")]
     [HttpDelete("users/{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]

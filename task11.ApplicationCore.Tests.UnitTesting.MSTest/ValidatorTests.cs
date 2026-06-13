@@ -2,13 +2,8 @@ using FluentValidation.Results;
 using task11.ApplicationCore.Models;
 using task11.ApplicationCore.Validators;
 
-/// <summary>
-/// Validation tests for the operation request models (amount must be positive and bounded with at
-/// most two decimals, the date window is enforced, the transaction currency must match the ISO-4217
-/// regex) and for the period report model (wallet required, start &lt;= end, span &lt;= 366 days).
-/// </summary>
 [TestClass]
-public sealed class ValidatorTests
+public class ValidatorTests
 {
     private readonly CreateOperationModelValidator _create = new();
     private readonly UpdateOperationModelValidator _update = new();

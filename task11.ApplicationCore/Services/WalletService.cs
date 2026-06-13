@@ -6,12 +6,7 @@ using task11.Data.Entities;
 
 namespace task11.ApplicationCore.Services;
 
-/// <summary>
-/// Implements wallet use-cases with service-layer ownership isolation.
-/// A wallet is accessible when it is shared (no owner), owned by the caller, or the caller
-/// is an admin. The base currency is immutable once the wallet has operations.
-/// </summary>
-public sealed class WalletService : IWalletService
+public class WalletService : IWalletService
 {
     private const string _defaultCurrency = "UAH";
 
@@ -24,7 +19,6 @@ public sealed class WalletService : IWalletService
         _currentUser = currentUser;
     }
 
-    /// <inheritdoc />
     public async Task<IReadOnlyList<WalletModel>> GetAccessibleAsync(CancellationToken cancellationToken = default)
     {
         var wallets = await _wallets.ListAccessibleAsync(
@@ -33,14 +27,12 @@ public sealed class WalletService : IWalletService
         return wallets.Select(Map).ToList();
     }
 
-    /// <inheritdoc />
     public async Task<WalletModel> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var wallet = await EnsureCanAccessAsync(id, cancellationToken);
         return Map(wallet);
     }
 
-    /// <inheritdoc />
     public async Task<WalletModel> CreateAsync(CreateWalletModel request, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
@@ -53,7 +45,7 @@ public sealed class WalletService : IWalletService
         {
             Name = request.Name.Trim(),
             BaseCurrency = currency,
-            // POST always creates a PERSONAL wallet owned by the current user.
+
             OwnerUserId = _currentUser.UserId
         };
 
@@ -62,7 +54,6 @@ public sealed class WalletService : IWalletService
         return Map(wallet);
     }
 
-    /// <inheritdoc />
     public async Task<WalletModel> UpdateAsync(Guid id, UpdateWalletModel request, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
@@ -73,7 +64,7 @@ public sealed class WalletService : IWalletService
 
         if (!string.Equals(newCurrency, wallet.BaseCurrency, StringComparison.OrdinalIgnoreCase))
         {
-            // BaseCurrency is immutable once any operation has been recorded against the wallet.
+
             if (await _wallets.HasOperationsAsync(wallet.Id, cancellationToken))
             {
                 throw new ConflictException(
@@ -90,7 +81,6 @@ public sealed class WalletService : IWalletService
         return Map(wallet);
     }
 
-    /// <inheritdoc />
     public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var wallet = await EnsureCanAccessAsync(id, cancellationToken);
@@ -98,7 +88,6 @@ public sealed class WalletService : IWalletService
         await _wallets.SoftDeleteAsync(wallet, cancellationToken);
     }
 
-    /// <inheritdoc />
     public async Task<WalletEntity> EnsureCanAccessAsync(Guid walletId, CancellationToken cancellationToken = default)
     {
         var wallet = await _wallets.GetByIdAsync(walletId, cancellationToken)
@@ -112,9 +101,6 @@ public sealed class WalletService : IWalletService
         return wallet;
     }
 
-    /// <summary>
-    /// Access rule: shared wallet (no owner) OR owned by the caller OR the caller is an admin.
-    /// </summary>
     private bool CanAccess(WalletEntity wallet) =>
         wallet.OwnerUserId is null
         || wallet.OwnerUserId == _currentUser.UserId

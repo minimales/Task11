@@ -4,12 +4,7 @@ using task11.Data.Entities;
 
 namespace task11.Data.Interceptors;
 
-/// <summary>
-/// Rewrites every <see cref="EntityState.Deleted"/> change on a <see cref="BaseEntity"/>
-/// into a soft delete (<c>IsDeleted = true</c>, <c>DeletedAtUtc = now</c>). Combined with the
-/// global query filter this makes a physical delete impossible anywhere in the app.
-/// </summary>
-public sealed class SoftDeleteInterceptor : SaveChangesInterceptor
+public class SoftDeleteInterceptor : SaveChangesInterceptor
 {
     private readonly IClock _clock;
 

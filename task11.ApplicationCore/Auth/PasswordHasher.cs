@@ -2,19 +2,14 @@ using System.Security.Cryptography;
 
 namespace task11.ApplicationCore.Auth;
 
-/// <summary>
-/// PBKDF2 (Rfc2898) password hasher using SHA-256 with a per-user salt.
-/// Stored format: <c>{iterations}.{saltBase64}.{hashBase64}</c>.
-/// </summary>
-public sealed class PasswordHasher
+public class PasswordHasher
 {
     private const int _iterations = 100_000;
-    private const int _saltSize = 16;   // 128-bit
-    private const int _keySize = 32;    // 256-bit
+    private const int _saltSize = 16;
+    private const int _keySize = 32;
     private const int _hashPartCount = 3;
     private static readonly HashAlgorithmName _algorithm = HashAlgorithmName.SHA256;
 
-    /// <summary>Hashes a plaintext password into the stored format.</summary>
     public string Hash(string password)
     {
         ArgumentException.ThrowIfNullOrEmpty(password);
@@ -28,7 +23,6 @@ public sealed class PasswordHasher
             Convert.ToBase64String(hash));
     }
 
-    /// <summary>Verifies a plaintext password against a stored hash. Constant-time comparison.</summary>
     public bool Verify(string password, string storedHash)
     {
         if (string.IsNullOrEmpty(password) || string.IsNullOrEmpty(storedHash))

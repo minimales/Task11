@@ -5,15 +5,10 @@ using task11.ApplicationCore.Services.Abstractions;
 
 namespace task11.Web.Controllers;
 
-/// <summary>
-/// Wallet-scoped operation types. Listing and creation are nested under a wallet;
-/// retrieval, update and deletion address a type directly by id. Access to the owning
-/// wallet is enforced in the service layer.
-/// </summary>
 [ApiController]
 [Authorize]
 [Produces("application/json")]
-public sealed class OperationTypesController : ControllerBase
+public class OperationTypesController : ControllerBase
 {
     private readonly IOperationTypeService _service;
 
@@ -22,7 +17,6 @@ public sealed class OperationTypesController : ControllerBase
         _service = service;
     }
 
-    /// <summary>Lists the operation types of a wallet.</summary>
     [HttpGet("api/wallets/{walletId:guid}/operation-types")]
     [ProducesResponseType(typeof(IReadOnlyList<OperationTypeModel>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
@@ -35,7 +29,6 @@ public sealed class OperationTypesController : ControllerBase
         return Ok(result);
     }
 
-    /// <summary>Creates an operation type in a wallet.</summary>
     [HttpPost("api/wallets/{walletId:guid}/operation-types")]
     [ProducesResponseType(typeof(OperationTypeModel), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -51,7 +44,6 @@ public sealed class OperationTypesController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
     }
 
-    /// <summary>Returns a single operation type by id.</summary>
     [HttpGet("api/operation-types/{id:guid}")]
     [ProducesResponseType(typeof(OperationTypeModel), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
@@ -64,7 +56,6 @@ public sealed class OperationTypesController : ControllerBase
         return Ok(result);
     }
 
-    /// <summary>Updates an operation type.</summary>
     [HttpPut("api/operation-types/{id:guid}")]
     [ProducesResponseType(typeof(OperationTypeModel), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -80,7 +71,6 @@ public sealed class OperationTypesController : ControllerBase
         return Ok(updated);
     }
 
-    /// <summary>Soft-deletes an operation type.</summary>
     [HttpDelete("api/operation-types/{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]

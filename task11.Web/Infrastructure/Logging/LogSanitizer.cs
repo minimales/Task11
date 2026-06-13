@@ -3,16 +3,10 @@ using System.Text.Json.Nodes;
 
 namespace task11.Web.Infrastructure.Logging;
 
-/// <summary>
-/// Redacts secrets from request/response bodies before they are logged.
-/// JSON bodies are parsed and deny-listed keys are recursively replaced with <c>"***"</c>.
-/// Non-JSON or oversized bodies are replaced with an <c>[omitted: N bytes]</c> marker.
-/// </summary>
 public static class LogSanitizer
 {
     private const string _redacted = "***";
 
-    /// <summary>Keys whose values must never be logged (case-insensitive).</summary>
     private static readonly HashSet<string> _denyList = new(StringComparer.OrdinalIgnoreCase)
     {
         "password",
@@ -25,10 +19,6 @@ public static class LogSanitizer
         "apiKey"
     };
 
-    /// <summary>
-    /// Sanitizes a body for logging. JSON is recursively redacted; anything else
-    /// (or bodies larger than <paramref name="maxBodyBytes"/>) is summarized by size.
-    /// </summary>
     public static string Sanitize(string? body, int maxBodyBytes)
     {
         if (string.IsNullOrWhiteSpace(body))
@@ -55,7 +45,6 @@ public static class LogSanitizer
         }
         catch (JsonException)
         {
-            // Non-JSON payload; do not leak raw content that may contain secrets.
             return $"[omitted: {byteCount} bytes]";
         }
     }

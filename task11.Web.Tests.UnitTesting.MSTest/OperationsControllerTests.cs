@@ -60,9 +60,6 @@ public class OperationsControllerTests
     [TestMethod]
     public async Task Test_OperationsController_Create_ReturnsCreatedWithConvertedAmountAndAuditNote()
     {
-        // Ported from the old xUnit OperationServiceTests.CreateAsync_ForeignCurrency_*:
-        // the service converts 100 EUR @ 40.5 -> 4050 UAH and appends an audit note; here we
-        // assert the controller surfaces that result as 201 Created.
         OperationModel converted = new()
         {
             Id = Guid.NewGuid(),
@@ -97,7 +94,6 @@ public class OperationsControllerTests
         Assert.IsTrue(body.Note!.StartsWith("Freelance "));
         Assert.IsTrue(body.Note.Contains("100 EUR @ 40.5"));
 
-        // The controller forwarded the original (pre-conversion) request unchanged.
         Assert.IsNotNull(operationService.LastCreateRequest);
         Assert.AreEqual(100m, operationService.LastCreateRequest!.Amount);
         Assert.AreEqual("EUR", operationService.LastCreateRequest.TransactionCurrency);

@@ -4,16 +4,7 @@ using task11.Data;
 
 namespace task11.ApplicationCore.Currency;
 
-/// <summary>
-/// <see cref="ICurrencyConverter"/> backed by two providers: <see cref="PrivatBankClient"/> for any
-/// pair involving UAH (the ECB-based Frankfurter feed does not publish the hryvnia) and
-/// <see cref="FrankfurterClient"/> for all other pairs.
-/// Historical rates are immutable, so they are cached in <see cref="IMemoryCache"/> keyed by
-/// <c>(from, to, date)</c> indefinitely; today's rate is cached for a short window only.
-/// On hard failure (after the HTTP layer's Polly retries are exhausted) a
-/// <see cref="FxUnavailableException"/> propagates — an unconverted amount is never returned silently.
-/// </summary>
-public sealed class CurrencyConverter : ICurrencyConverter
+public class CurrencyConverter : ICurrencyConverter
 {
     private const string _uah = "UAH";
     private const int _roundingDecimals = 2;
@@ -36,7 +27,6 @@ public sealed class CurrencyConverter : ICurrencyConverter
         _clock = clock;
     }
 
-    /// <inheritdoc />
     public async Task<decimal> GetRateAsync(
         string from,
         string to,
@@ -49,13 +39,11 @@ public sealed class CurrencyConverter : ICurrencyConverter
         from = from.Trim().ToUpperInvariant();
         to = to.Trim().ToUpperInvariant();
 
-        // Same currency: identity rate, no network call.
         if (string.Equals(from, to, StringComparison.Ordinal))
         {
             return 1m;
         }
 
-        // Rates are keyed by calendar date only; normalize away any time component.
         var rateDate = date.Date;
         var cacheKey = BuildCacheKey(from, to, rateDate);
 
@@ -64,14 +52,11 @@ public sealed class CurrencyConverter : ICurrencyConverter
             return cachedRate;
         }
 
-        // UAH pairs go to PrivatBank (Frankfurter/ECB does not cover the hryvnia); everything else
-        // uses Frankfurter. from/to are already upper-cased above.
         bool involvesUah = from == _uah || to == _uah;
         var rate = involvesUah
             ? await _privatBank.GetRateAsync(from, to, rateDate, cancellationToken)
             : await _frankfurter.GetRateAsync(from, to, rateDate, cancellationToken);
 
-        // Past dates are immutable -> cache forever. Today's rate may still move -> short TTL.
         var today = _clock.UtcNow.Date;
         if (rateDate < today)
         {
@@ -85,7 +70,6 @@ public sealed class CurrencyConverter : ICurrencyConverter
         return rate;
     }
 
-    /// <inheritdoc />
     public async Task<(decimal Converted, decimal Rate)> ConvertAsync(
         decimal amount,
         string from,

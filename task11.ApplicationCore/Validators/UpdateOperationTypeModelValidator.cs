@@ -3,8 +3,7 @@ using task11.ApplicationCore.Models;
 
 namespace task11.ApplicationCore.Validators;
 
-/// <summary>Validates <see cref="UpdateOperationTypeModel"/>.</summary>
-public sealed class UpdateOperationTypeModelValidator : AbstractValidator<UpdateOperationTypeModel>
+public class UpdateOperationTypeModelValidator : AbstractValidator<UpdateOperationTypeModel>
 {
     public UpdateOperationTypeModelValidator()
     {

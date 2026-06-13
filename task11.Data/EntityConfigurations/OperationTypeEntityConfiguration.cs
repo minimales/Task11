@@ -4,8 +4,7 @@ using task11.Data.Entities;
 
 namespace task11.Data.EntityConfigurations;
 
-/// <summary>EF mapping for <see cref="OperationTypeEntity"/>.</summary>
-public sealed class OperationTypeEntityConfiguration : IEntityTypeConfiguration<OperationTypeEntity>
+public class OperationTypeEntityConfiguration : IEntityTypeConfiguration<OperationTypeEntity>
 {
     public void Configure(EntityTypeBuilder<OperationTypeEntity> builder)
     {
@@ -24,7 +23,6 @@ public sealed class OperationTypeEntityConfiguration : IEntityTypeConfiguration<
             .IsRequired()
             .HasConversion<int>();
 
-        // Type names are unique per wallet among non-deleted rows.
         builder.HasIndex(t => new { t.WalletId, t.Name })
             .IsUnique()
             .HasFilter("\"IsDeleted\" = false");

@@ -21,7 +21,6 @@ public class ReportsControllerTests
     [TestMethod]
     public async Task Test_ReportsController_GetDaily_ReturnsOkWithIncomeExpenseAndNetTotals()
     {
-        // Ported from the old xUnit ReportServiceTests.GetDailyAsync_ComputesIncomeExpenseAndNetTotals.
         FakeReportService reportService = new(Report("USD", income: 1500m, expense: 400m));
         ReportsController controller = new ReportsController(reportService).WithTestContext();
 
@@ -41,7 +40,6 @@ public class ReportsControllerTests
     [TestMethod]
     public async Task Test_ReportsController_GetPeriod_NetResultCanBeNegative()
     {
-        // Ported from GetPeriodAsync_NetResult_IsIncomeMinusExpense_AndCanBeNegative.
         FakeReportService reportService = new(Report("EUR", income: 200m, expense: 750m));
         ReportsController controller = new ReportsController(reportService).WithTestContext();
 

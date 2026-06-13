@@ -3,11 +3,7 @@ using task11.ApplicationCore.Models;
 
 namespace task11.ApplicationCore.Validators;
 
-/// <summary>
-/// Validates <see cref="CreateUserModel"/>: username 3..50 matching the allowed charset,
-/// password >= 6, and role restricted to {Admin, User}.
-/// </summary>
-public sealed class CreateUserModelValidator : AbstractValidator<CreateUserModel>
+public class CreateUserModelValidator : AbstractValidator<CreateUserModel>
 {
     private static readonly string[] _allowedRoles = { "Admin", "User" };
 

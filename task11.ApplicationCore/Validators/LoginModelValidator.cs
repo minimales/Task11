@@ -3,8 +3,7 @@ using task11.ApplicationCore.Models;
 
 namespace task11.ApplicationCore.Validators;
 
-/// <summary>Validates <see cref="LoginModel"/>: username and password must be present.</summary>
-public sealed class LoginModelValidator : AbstractValidator<LoginModel>
+public class LoginModelValidator : AbstractValidator<LoginModel>
 {
     public LoginModelValidator()
     {

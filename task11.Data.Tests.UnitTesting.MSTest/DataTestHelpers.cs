@@ -1,11 +1,7 @@
 using Microsoft.EntityFrameworkCore.Metadata;
 using task11.Data;
 
-/// <summary>
-/// Deterministic <see cref="IClock"/> used by the Data-layer tests so audit/soft-delete
-/// stamps are predictable. Hand-rolled fake; no Moq.
-/// </summary>
-internal sealed class FixedClock : IClock
+internal class FixedClock : IClock
 {
     public DateTime UtcNow { get; set; }
 
@@ -15,12 +11,6 @@ internal sealed class FixedClock : IClock
         new(new DateTime(year, month, day, 0, 0, 0, DateTimeKind.Utc));
 }
 
-/// <summary>
-/// Shared builders for the Data-layer tests. <see cref="InMemory"/> opens an isolated
-/// in-memory store (named per test); <see cref="RelationalModel"/> builds the Npgsql model
-/// without a live database so relational-only metadata (precision, filtered indexes, column
-/// types, defaults) can be asserted against the EF model.
-/// </summary>
 internal static class DataTestHelpers
 {
     private const string _fakeNpgsqlConnectionString =

@@ -5,12 +5,7 @@ using task11.ApplicationCore.Models;
 
 namespace task11.Web.Middleware;
 
-/// <summary>
-/// Translates exceptions into RFC 7807 problem responses:
-/// NotFound→404, Forbidden→403, Conflict→409, FxUnavailable→503,
-/// ValidationException→400, anything else→500. Secrets are never included.
-/// </summary>
-public sealed class ExceptionHandlingMiddleware
+public class ExceptionHandlingMiddleware
 {
     private const int _serverErrorThreshold = 500;
 
