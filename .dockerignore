@@ -1,0 +1,20 @@
+**/bin/
+**/obj/
+**/.vs/
+**/.vscode/
+**/.idea/
+**/*.user
+.git/
+.gitignore
+.env
+.dockerignore
+Dockerfile
+docker-compose.yml
+**/TestResults/
+README.md
+docs/
+
+# Legacy single-project sources (the image builds task11.Web).
+src/
+tests/
+PersonalFinance.sln

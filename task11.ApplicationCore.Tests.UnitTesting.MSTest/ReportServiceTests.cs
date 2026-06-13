@@ -1,0 +1,156 @@
+using task11.ApplicationCore.Models;
+using task11.ApplicationCore.Repositories;
+using task11.ApplicationCore.Repositories.Abstractions;
+using task11.ApplicationCore.Services;
+using task11.Data;
+using task11.Data.Entities;
+using task11.Data.Entities.Enums;
+
+/// <summary>
+/// Behavioural tests for <see cref="ReportService"/>: income/expense/net totals are correct (net can
+/// go negative) and soft-deleted operations are excluded from the aggregates. The soft-delete case
+/// runs end-to-end against the real <see cref="ReportRepository"/> + EF Core InMemory store so the
+/// global query filter is exercised. Other collaborators are hand-rolled fakes (no Moq).
+/// </summary>
+[TestClass]
+public sealed class ReportServiceTests
+{
+    private static readonly Guid _walletId = Guid.Parse("22222222-2222-2222-2222-222222222222");
+
+    private static WalletEntity SharedWallet(string currency) => new()
+    {
+        Id = _walletId,
+        Name = "Test Wallet",
+        BaseCurrency = currency,
+        OwnerUserId = null
+    };
+
+    [TestMethod]
+    public async Task Test_ReportService_GetDailyAsync_ComputesIncomeExpenseAndNetTotals()
+    {
+        WalletEntity wallet = SharedWallet("USD");
+
+        FakeReportRepository reportRepository = new(new ReportTotals(TotalIncome: 1500m, TotalExpense: 400m));
+
+        ReportService service = new(
+            reportRepository,
+            new FakeWalletRepository(wallet),
+            new FakeCurrentUser());
+
+        DailyReportModel request = new() { WalletId = _walletId, Date = new DateTime(2026, 6, 13) };
+
+        ReportModel result = await service.GetDailyAsync(request);
+
+        Assert.AreEqual(1500m, result.TotalIncome);
+        Assert.AreEqual(400m, result.TotalExpense);
+        Assert.AreEqual(1100m, result.NetResult);
+        Assert.AreEqual("USD", result.Currency);
+    }
+
+    [TestMethod]
+    public async Task Test_ReportService_GetPeriodAsync_NetResultIsIncomeMinusExpense_CanBeNegative()
+    {
+        WalletEntity wallet = SharedWallet("EUR");
+
+        FakeReportRepository reportRepository = new(new ReportTotals(TotalIncome: 200m, TotalExpense: 750m));
+
+        ReportService service = new(
+            reportRepository,
+            new FakeWalletRepository(wallet),
+            new FakeCurrentUser());
+
+        PeriodReportModel request = new()
+        {
+            WalletId = _walletId,
+            StartDate = new DateTime(2026, 6, 1),
+            EndDate = new DateTime(2026, 6, 30)
+        };
+
+        ReportModel result = await service.GetPeriodAsync(request);
+
+        Assert.AreEqual(-550m, result.NetResult);
+        Assert.AreEqual("EUR", result.Currency);
+    }
+
+    [TestMethod]
+    public async Task Test_ReportService_GetDailyAsync_PassesUtcRange_DateToDatePlusOne()
+    {
+        WalletEntity wallet = SharedWallet("UAH");
+
+        FakeReportRepository reportRepository = new(new ReportTotals(0m, 0m));
+
+        ReportService service = new(
+            reportRepository,
+            new FakeWalletRepository(wallet),
+            new FakeCurrentUser());
+
+        await service.GetDailyAsync(new DailyReportModel
+        {
+            WalletId = _walletId,
+            Date = new DateTime(2026, 6, 13, 10, 30, 0, DateTimeKind.Unspecified)
+        });
+
+        Assert.AreEqual(new DateTime(2026, 6, 13, 0, 0, 0, DateTimeKind.Utc), reportRepository.CapturedFrom);
+        Assert.AreEqual(DateTimeKind.Utc, reportRepository.CapturedFrom.Kind);
+        Assert.AreEqual(new DateTime(2026, 6, 14, 0, 0, 0, DateTimeKind.Utc), reportRepository.CapturedTo);
+        Assert.AreEqual(DateTimeKind.Utc, reportRepository.CapturedTo.Kind);
+    }
+
+    [TestMethod]
+    public async Task Test_ReportService_GetDailyAsync_ExcludesSoftDeletedOperations_FromTotalsAndOperations()
+    {
+        // Real InMemory context + real ReportRepository so the global soft-delete query filter
+        // is exercised end-to-end.
+        InMemoryDbContextFactory factory = new(
+            nameof(Test_ReportService_GetDailyAsync_ExcludesSoftDeletedOperations_FromTotalsAndOperations));
+
+        OperationTypeEntity incomeType = new() { Name = "Salary", Kind = OperationKind.Income, WalletId = _walletId };
+        OperationTypeEntity expenseType = new() { Name = "Groceries", Kind = OperationKind.Expense, WalletId = _walletId };
+
+        DateTime day = new(2026, 6, 13, 12, 0, 0, DateTimeKind.Utc);
+
+        using (AppDbContext db = factory.CreateDbContext())
+        {
+            db.OperationTypes.Add(incomeType);
+            db.OperationTypes.Add(expenseType);
+
+            // Live operations.
+            db.FinancialOperations.Add(Operation(incomeType, 1000m, day));
+            db.FinancialOperations.Add(Operation(expenseType, 300m, day));
+
+            // Soft-deleted operations (must be excluded by the global query filter).
+            db.FinancialOperations.Add(Operation(incomeType, 9999m, day, isDeleted: true));
+            db.FinancialOperations.Add(Operation(expenseType, 8888m, day, isDeleted: true));
+
+            db.SaveChanges();
+        }
+
+        WalletEntity wallet = SharedWallet("USD");
+        ReportRepository reportRepository = new(factory);
+
+        ReportService service = new(
+            reportRepository,
+            new FakeWalletRepository(wallet),
+            new FakeCurrentUser());
+
+        ReportModel result = await service.GetDailyAsync(new DailyReportModel { WalletId = _walletId, Date = day });
+
+        // Deleted rows are not counted in totals, net, or the operations list.
+        Assert.AreEqual(1000m, result.TotalIncome);
+        Assert.AreEqual(300m, result.TotalExpense);
+        Assert.AreEqual(700m, result.NetResult);
+        Assert.AreEqual(2, result.Operations.Count);
+        Assert.IsFalse(result.Operations.Any(o => o.Amount == 9999m || o.Amount == 8888m));
+    }
+
+    private static FinancialOperationEntity Operation(OperationTypeEntity type, decimal amount, DateTime occurredAtUtc, bool isDeleted = false) => new()
+    {
+        OperationTypeId = type.Id,
+        OperationType = type,
+        WalletId = _walletId,
+        Amount = amount,
+        OccurredAtUtc = occurredAtUtc,
+        IsDeleted = isDeleted,
+        DeletedAtUtc = isDeleted ? occurredAtUtc : null
+    };
+}

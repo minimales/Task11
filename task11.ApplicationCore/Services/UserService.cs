@@ -1,0 +1,106 @@
+using task11.ApplicationCore.Auth;
+using task11.ApplicationCore.Models;
+using task11.ApplicationCore.Repositories.Abstractions;
+using task11.ApplicationCore.Services.Abstractions;
+using task11.Data.Entities;
+
+namespace task11.ApplicationCore.Services;
+
+/// <summary>
+/// User administration: CRUD with PBKDF2 hashing and soft delete. Usernames are unique
+/// among non-deleted users; the password hash is never surfaced in a model.
+/// </summary>
+public sealed class UserService : IUserService
+{
+    private readonly IUserRepository _users;
+    private readonly PasswordHasher _passwordHasher;
+
+    public UserService(IUserRepository users, PasswordHasher passwordHasher)
+    {
+        _users = users;
+        _passwordHasher = passwordHasher;
+    }
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<UserModel>> GetAllAsync(CancellationToken cancellationToken = default)
+    {
+        var users = await _users.GetAllAsync(cancellationToken);
+        return users.Select(Map).ToList();
+    }
+
+    /// <inheritdoc />
+    public async Task<UserModel> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var user = await _users.GetByIdAsync(id, cancellationToken)
+                   ?? throw new NotFoundException(nameof(UserEntity), id);
+
+        return Map(user);
+    }
+
+    /// <inheritdoc />
+    public async Task<UserModel> CreateAsync(CreateUserModel request, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        if (await _users.UsernameExistsAsync(request.Username, excludeId: null, cancellationToken))
+        {
+            throw new ConflictException($"Username '{request.Username}' is already taken.");
+        }
+
+        var user = new UserEntity
+        {
+            Username = request.Username,
+            PasswordHash = _passwordHasher.Hash(request.Password),
+            Role = request.Role
+        };
+
+        await _users.AddAsync(user, cancellationToken);
+
+        return Map(user);
+    }
+
+    /// <inheritdoc />
+    public async Task<UserModel> UpdateAsync(Guid id, UpdateUserModel request, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        var user = await _users.GetByIdAsync(id, cancellationToken)
+                   ?? throw new NotFoundException(nameof(UserEntity), id);
+
+        if (await _users.UsernameExistsAsync(request.Username, excludeId: id, cancellationToken))
+        {
+            throw new ConflictException($"Username '{request.Username}' is already taken.");
+        }
+
+        user.Username = request.Username;
+        user.Role = request.Role;
+
+        if (!string.IsNullOrEmpty(request.Password))
+        {
+            user.PasswordHash = _passwordHasher.Hash(request.Password);
+        }
+
+        await _users.UpdateAsync(user, cancellationToken);
+
+        return Map(user);
+    }
+
+    /// <inheritdoc />
+    public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var user = await _users.GetByIdAsync(id, cancellationToken)
+                   ?? throw new NotFoundException(nameof(UserEntity), id);
+
+        await _users.SoftDeleteAsync(user, cancellationToken);
+    }
+
+    /// <summary>Maps a <see cref="UserEntity"/> to its public model (no password hash).</summary>
+    private static UserModel Map(UserEntity user) => new()
+    {
+        Id = user.Id,
+        Username = user.Username,
+        Role = user.Role,
+        CreatedAtUtc = user.CreatedAtUtc,
+        UpdatedAtUtc = user.UpdatedAtUtc
+    };
+}
