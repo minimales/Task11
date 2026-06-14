@@ -8,6 +8,12 @@ namespace task11.Infrastructure.Repositories;
 
 public class ReportRepository : IReportRepository
 {
+    private record KindTotal
+    {
+        public OperationKind Kind { get; init; }
+        public decimal Total { get; init; }
+    }
+
     private readonly DbContextFactory _factory;
 
     public ReportRepository(DbContextFactory factory)
@@ -23,12 +29,12 @@ public class ReportRepository : IReportRepository
     {
         await using AppDbContext ctx = _factory.CreateDbContext();
 
-        var grouped = await ctx.FinancialOperations
+        List<KindTotal> grouped = await ctx.FinancialOperations
             .Where(o => o.WalletId == walletId
                         && o.OccurredAtUtc >= fromUtc
                         && o.OccurredAtUtc < toUtc)
             .GroupBy(o => o.OperationType.Kind)
-            .Select(g => new { Kind = g.Key, Total = g.Sum(o => o.Amount) })
+            .Select(g => new KindTotal { Kind = g.Key, Total = g.Sum(o => o.Amount) })
             .ToListAsync(cancellationToken);
 
         decimal income = grouped
