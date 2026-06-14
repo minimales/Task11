@@ -34,7 +34,7 @@ public class RequestResponseLoggingMiddleware
                         ?? context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value
                         ?? "anonymous";
 
-        using var userScope = LogContext.PushProperty("UserId", userId);
+        using IDisposable userScope = LogContext.PushProperty("UserId", userId);
 
         string requestBody = await ReadRequestBodyAsync(context.Request);
         string url = context.Request.GetEncodedUrl();
@@ -46,10 +46,10 @@ public class RequestResponseLoggingMiddleware
             LogSanitizer.Sanitize(requestBody, _maxBodyBytes));
 
         Stream originalBody = context.Response.Body;
-        await using var buffer = new MemoryStream();
+        await using MemoryStream buffer = new MemoryStream();
         context.Response.Body = buffer;
 
-        var stopwatch = Stopwatch.StartNew();
+        Stopwatch stopwatch = Stopwatch.StartNew();
         try
         {
             await _next(context);
@@ -83,7 +83,7 @@ public class RequestResponseLoggingMiddleware
         }
 
         request.Body.Seek(0, SeekOrigin.Begin);
-        using var reader = new StreamReader(request.Body, leaveOpen: true);
+        using StreamReader reader = new StreamReader(request.Body, leaveOpen: true);
         string body = await reader.ReadToEndAsync();
         request.Body.Seek(0, SeekOrigin.Begin);
         return body;

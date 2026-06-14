@@ -39,11 +39,11 @@ ConfigureSerilog(new ConfigurationBuilder()
 
 try
 {
-    var builder = WebApplication.CreateBuilder(args);
+    WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
     builder.Host.UseSerilog();
 
-    var config = builder.Configuration;
+    ConfigurationManager config = builder.Configuration;
 
     string connectionString = config.GetConnectionString("Default")
         ?? "Host=localhost;Port=5432;Database=finance;Username=finance;Password=finance";
@@ -53,7 +53,7 @@ try
     builder.Services.AddSingleton(sp =>
         new DbContextFactory(connectionString, useInMemory, sp.GetRequiredService<IClock>()));
 
-    var jwtSettings = new JwtSettings();
+    JwtSettings jwtSettings = new JwtSettings();
     config.GetSection(JwtSettings.SectionName).Bind(jwtSettings);
 
     if (string.IsNullOrWhiteSpace(jwtSettings.Secret) || jwtSettings.Secret.Length < 32)
@@ -68,7 +68,7 @@ try
     builder.Services.AddHttpContextAccessor();
     builder.Services.AddScoped<ICurrentUser, CurrentUser>();
 
-    var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Secret));
+    SymmetricSecurityKey signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Secret));
 
     builder.Services.AddAuthentication(options =>
         {
@@ -119,20 +119,22 @@ try
 
     builder.Services.AddMemoryCache();
 
-    var fxOptions = new FxOptions();
+    FxOptions fxOptions = new FxOptions();
     config.GetSection(FxOptions.SectionName).Bind(fxOptions);
     int fxRetryCount = fxOptions.RetryCount > 0 ? fxOptions.RetryCount : 3;
     const string FxUserAgent = "task11-PersonalFinanceApi/1.0";
 
     builder.Services.AddHttpClient<FrankfurterClient>((sp, client) =>
         {
-            var options = sp.GetRequiredService<IOptions<FxOptions>>().Value;
-            var baseUrl = string.IsNullOrWhiteSpace(options.BaseUrl)
+            FxOptions options = sp.GetRequiredService<IOptions<FxOptions>>().Value;
+            string baseUrl = string.IsNullOrWhiteSpace(options.BaseUrl)
                 ? "https://api.frankfurter.dev"
                 : options.BaseUrl;
 
             client.BaseAddress = new Uri(baseUrl, UriKind.Absolute);
-            client.Timeout = TimeSpan.FromSeconds(10);
+            // Let AddStandardResilienceHandler own timeouts (10s attempt / 30s total);
+            // a HttpClient.Timeout here would cap the whole pipeline and starve retries.
+            client.Timeout = Timeout.InfiniteTimeSpan;
             client.DefaultRequestHeaders.Accept.ParseAdd("application/json");
             client.DefaultRequestHeaders.UserAgent.ParseAdd(FxUserAgent);
         })
@@ -143,13 +145,15 @@ try
 
     builder.Services.AddHttpClient<PrivatBankClient>((sp, client) =>
         {
-            var options = sp.GetRequiredService<IOptions<FxOptions>>().Value;
-            var baseUrl = string.IsNullOrWhiteSpace(options.PrivatBankBaseUrl)
+            FxOptions options = sp.GetRequiredService<IOptions<FxOptions>>().Value;
+            string baseUrl = string.IsNullOrWhiteSpace(options.PrivatBankBaseUrl)
                 ? "https://api.privatbank.ua"
                 : options.PrivatBankBaseUrl;
 
             client.BaseAddress = new Uri(baseUrl, UriKind.Absolute);
-            client.Timeout = TimeSpan.FromSeconds(10);
+            // Let AddStandardResilienceHandler own timeouts (10s attempt / 30s total);
+            // a HttpClient.Timeout here would cap the whole pipeline and starve retries.
+            client.Timeout = Timeout.InfiniteTimeSpan;
             client.DefaultRequestHeaders.Accept.ParseAdd("application/json");
             client.DefaultRequestHeaders.UserAgent.ParseAdd(FxUserAgent);
         })
@@ -186,7 +190,7 @@ try
     {
         options.InvalidModelStateResponseFactory = context =>
         {
-            var problemDetails = new ValidationProblemDetails(context.ModelState)
+            ValidationProblemDetails problemDetails = new ValidationProblemDetails(context.ModelState)
             {
                 Type = "about:blank",
                 Title = "Validation failed",
@@ -213,7 +217,7 @@ try
             Description = "Personal finance management API with wallets, operations and reports."
         });
 
-        var scheme = new OpenApiSecurityScheme
+        OpenApiSecurityScheme scheme = new OpenApiSecurityScheme
         {
             Name = "Authorization",
             Description = "Enter the JWT as: Bearer {token}",
@@ -235,11 +239,18 @@ try
         });
     });
 
-    builder.Services.AddControllers();
+    builder.Services.AddControllers()
+        .AddJsonOptions(options =>
+        {
+            // Don't echo internal CLR/model type names from deserialization exceptions to clients.
+            options.AllowInputFormatterExceptionMessages = false;
+        });
 
-    var app = builder.Build();
+    WebApplication app = builder.Build();
 
     app.UseMiddleware<CorrelationIdMiddleware>();
+    // Wraps the whole pipeline so error (4xx/5xx) responses are logged with their final status+body.
+    app.UseMiddleware<RequestResponseLoggingMiddleware>();
 
     // IExceptionHandler-based ProblemDetails pipeline (replaces the old custom middleware).
     app.UseExceptionHandler();
@@ -250,7 +261,6 @@ try
     app.UseSwaggerUI();
 
     app.UseAuthentication();
-    app.UseMiddleware<RequestResponseLoggingMiddleware>();
     app.UseAuthorization();
 
     app.MapControllers();
@@ -291,10 +301,10 @@ static void ConfigureSerilog(IConfiguration configuration)
 
 static async Task MigrateAndSeedAsync(WebApplication app)
 {
-    var logger = app.Services.GetRequiredService<ILogger<Program>>();
-    var factory = app.Services.GetRequiredService<DbContextFactory>();
+    ILogger<Program> logger = app.Services.GetRequiredService<ILogger<Program>>();
+    DbContextFactory factory = app.Services.GetRequiredService<DbContextFactory>();
 
-    var pipeline = new ResiliencePipelineBuilder()
+    ResiliencePipeline pipeline = new ResiliencePipelineBuilder()
         .AddRetry(new RetryStrategyOptions
         {
             ShouldHandle = new PredicateBuilder().Handle<Exception>(),
@@ -314,24 +324,24 @@ static async Task MigrateAndSeedAsync(WebApplication app)
         })
         .Build();
 
-    await pipeline.ExecuteAsync(_ =>
+    await pipeline.ExecuteAsync(async _ =>
     {
         factory.MigrateIfRelational();
-        return ValueTask.CompletedTask;
+        // Seeding is idempotent (guarded by AnyAsync(Users)); run it inside the same
+        // retry pipeline so a transient fault is retried instead of crashing startup.
+        await SeedAsync(app.Services);
     });
-
-    await SeedAsync(app.Services);
 }
 
 static async Task SeedAsync(IServiceProvider services)
 {
-    var factory = services.GetRequiredService<DbContextFactory>();
-    var hasher = services.GetRequiredService<PasswordHasher>();
-    var clock = services.GetRequiredService<IClock>();
-    var configuration = services.GetRequiredService<IConfiguration>();
-    var logger = services.GetRequiredService<ILogger<Program>>();
+    DbContextFactory factory = services.GetRequiredService<DbContextFactory>();
+    PasswordHasher hasher = services.GetRequiredService<PasswordHasher>();
+    IClock clock = services.GetRequiredService<IClock>();
+    IConfiguration configuration = services.GetRequiredService<IConfiguration>();
+    ILogger<Program> logger = services.GetRequiredService<ILogger<Program>>();
 
-    await using var db = factory.CreateDbContext();
+    await using AppDbContext db = factory.CreateDbContext();
 
     if (await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions
             .AnyAsync(db.Users))
@@ -346,7 +356,7 @@ static async Task SeedAsync(IServiceProvider services)
 
     DateTime now = clock.UtcNow;
 
-    var admin = new UserEntity
+    UserEntity admin = new UserEntity
     {
         Username = adminUsername,
         PasswordHash = hasher.Hash(adminPassword),
@@ -354,7 +364,7 @@ static async Task SeedAsync(IServiceProvider services)
         CreatedAtUtc = now
     };
 
-    var sharedWallet = new WalletEntity
+    WalletEntity sharedWallet = new WalletEntity
     {
         Name = "Shared",
         BaseCurrency = defaultCurrency,

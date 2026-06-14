@@ -21,7 +21,7 @@ public class ReportRepository : IReportRepository
         DateTime toUtc,
         CancellationToken cancellationToken = default)
     {
-        await using var ctx = _factory.CreateDbContext();
+        await using AppDbContext ctx = _factory.CreateDbContext();
 
         var grouped = await ctx.FinancialOperations
             .Where(o => o.WalletId == walletId
@@ -48,7 +48,7 @@ public class ReportRepository : IReportRepository
         DateTime toUtc,
         CancellationToken cancellationToken = default)
     {
-        await using var ctx = _factory.CreateDbContext();
+        await using AppDbContext ctx = _factory.CreateDbContext();
 
         return await ctx.FinancialOperations
             .Where(o => o.WalletId == walletId

@@ -50,8 +50,8 @@ public class CurrencyConverter : ICurrencyConverter
             return 1m;
         }
 
-        var rateDate = date.Date;
-        var cacheKey = BuildCacheKey(from, to, rateDate);
+        DateTime rateDate = date.Date;
+        string cacheKey = BuildCacheKey(from, to, rateDate);
 
         if (_cache.TryGetValue(cacheKey, out decimal cachedRate))
         {
@@ -59,11 +59,11 @@ public class CurrencyConverter : ICurrencyConverter
         }
 
         bool involvesUah = from == _uah || to == _uah;
-        var rate = involvesUah
+        decimal rate = involvesUah
             ? await _privatBank.GetRateAsync(from, to, rateDate, cancellationToken)
             : await _frankfurter.GetRateAsync(from, to, rateDate, cancellationToken);
 
-        var today = _clock.UtcNow.Date;
+        DateTime today = _clock.UtcNow.Date;
         if (rateDate < today)
         {
             _cache.Set(cacheKey, rate);
@@ -86,8 +86,8 @@ public class CurrencyConverter : ICurrencyConverter
         ArgumentException.ThrowIfNullOrWhiteSpace(from);
         ArgumentException.ThrowIfNullOrWhiteSpace(to);
 
-        var rate = await GetRateAsync(from, to, date, cancellationToken);
-        var converted = Math.Round(amount * rate, _roundingDecimals, MidpointRounding.ToEven);
+        decimal rate = await GetRateAsync(from, to, date, cancellationToken);
+        decimal converted = Math.Round(amount * rate, _roundingDecimals, MidpointRounding.ToEven);
         return (converted, rate);
     }
 

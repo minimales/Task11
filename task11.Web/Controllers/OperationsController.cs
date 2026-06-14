@@ -7,7 +7,6 @@ namespace task11.Web.Controllers;
 
 [ApiController]
 [Authorize]
-[Produces("application/json")]
 public class OperationsController : ControllerBase
 {
     private readonly IOperationService _operations;
@@ -27,7 +26,7 @@ public class OperationsController : ControllerBase
         Guid walletId,
         CancellationToken cancellationToken)
     {
-        var result = await _operations.GetByWalletAsync(walletId, cancellationToken);
+        IReadOnlyList<OperationModel> result = await _operations.GetByWalletAsync(walletId, cancellationToken);
         return Ok(result);
     }
 
@@ -37,7 +36,7 @@ public class OperationsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<OperationModel>> GetById(Guid id, CancellationToken cancellationToken)
     {
-        var result = await _operations.GetByIdAsync(id, cancellationToken);
+        OperationModel result = await _operations.GetByIdAsync(id, cancellationToken);
         return Ok(result);
     }
 
@@ -51,7 +50,7 @@ public class OperationsController : ControllerBase
         [FromBody] CreateOperationModel request,
         CancellationToken cancellationToken)
     {
-        var result = await _operations.CreateAsync(request, cancellationToken);
+        OperationModel result = await _operations.CreateAsync(request, cancellationToken);
         return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
     }
 
@@ -66,7 +65,7 @@ public class OperationsController : ControllerBase
         [FromBody] UpdateOperationModel request,
         CancellationToken cancellationToken)
     {
-        var result = await _operations.UpdateAsync(id, request, cancellationToken);
+        OperationModel result = await _operations.UpdateAsync(id, request, cancellationToken);
         return Ok(result);
     }
 

@@ -12,7 +12,7 @@ internal static class OperationValidationRules
 
     public static bool IsWithinAllowedWindow(DateTime date)
     {
-        var utc = date.Kind switch
+        DateTime utc = date.Kind switch
         {
             DateTimeKind.Utc => date,
             DateTimeKind.Local => date.ToUniversalTime(),

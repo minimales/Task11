@@ -42,7 +42,7 @@ public class SoftDeleteInterceptor : SaveChangesInterceptor
 
         DateTime now = _clock.UtcNow;
 
-        foreach (var entry in context.ChangeTracker.Entries<BaseEntity>())
+        foreach (Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry<BaseEntity> entry in context.ChangeTracker.Entries<BaseEntity>())
         {
             if (entry.State != EntityState.Deleted)
             {

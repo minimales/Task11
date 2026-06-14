@@ -15,6 +15,8 @@ public interface IOperationTypeRepository
         Guid? excludeId = null,
         CancellationToken cancellationToken = default);
 
+    Task<bool> HasOperationsAsync(Guid operationTypeId, CancellationToken cancellationToken = default);
+
     Task AddAsync(OperationTypeEntity type, CancellationToken cancellationToken = default);
 
     Task UpdateAsync(OperationTypeEntity type, CancellationToken cancellationToken = default);

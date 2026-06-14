@@ -16,7 +16,7 @@ public class OperationTypeRepository : IOperationTypeRepository
 
     public async Task<OperationTypeEntity?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        await using var ctx = _factory.CreateDbContext();
+        await using AppDbContext ctx = _factory.CreateDbContext();
         return await ctx.OperationTypes
             .AsNoTracking()
             .FirstOrDefaultAsync(t => t.Id == id, cancellationToken);
@@ -26,7 +26,7 @@ public class OperationTypeRepository : IOperationTypeRepository
         Guid walletId,
         CancellationToken cancellationToken = default)
     {
-        await using var ctx = _factory.CreateDbContext();
+        await using AppDbContext ctx = _factory.CreateDbContext();
         return await ctx.OperationTypes
             .AsNoTracking()
             .Where(t => t.WalletId == walletId)
@@ -42,7 +42,7 @@ public class OperationTypeRepository : IOperationTypeRepository
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
 
-        await using var ctx = _factory.CreateDbContext();
+        await using AppDbContext ctx = _factory.CreateDbContext();
         return await ctx.OperationTypes
             .AsNoTracking()
             .AnyAsync(
@@ -52,29 +52,44 @@ public class OperationTypeRepository : IOperationTypeRepository
                 cancellationToken);
     }
 
+    public async Task<bool> HasOperationsAsync(Guid operationTypeId, CancellationToken cancellationToken = default)
+    {
+        await using AppDbContext ctx = _factory.CreateDbContext();
+        return await ctx.FinancialOperations
+            .AsNoTracking()
+            .IgnoreQueryFilters()
+            .AnyAsync(o => o.OperationTypeId == operationTypeId && !o.IsDeleted, cancellationToken);
+    }
+
     public async Task AddAsync(OperationTypeEntity type, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(type);
 
-        await using var ctx = _factory.CreateDbContext();
+        await using AppDbContext ctx = _factory.CreateDbContext();
         await ctx.OperationTypes.AddAsync(type, cancellationToken);
-        await ctx.SaveChangesAsync(cancellationToken);
+        await UniqueViolationTranslator.SaveChangesTranslatingUniqueViolationAsync(
+            ctx,
+            $"An operation type named '{type.Name}' already exists in this wallet.",
+            cancellationToken);
     }
 
     public async Task UpdateAsync(OperationTypeEntity type, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(type);
 
-        await using var ctx = _factory.CreateDbContext();
+        await using AppDbContext ctx = _factory.CreateDbContext();
         ctx.OperationTypes.Update(type);
-        await ctx.SaveChangesAsync(cancellationToken);
+        await UniqueViolationTranslator.SaveChangesTranslatingUniqueViolationAsync(
+            ctx,
+            $"An operation type named '{type.Name}' already exists in this wallet.",
+            cancellationToken);
     }
 
     public async Task SoftDeleteAsync(OperationTypeEntity type, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(type);
 
-        await using var ctx = _factory.CreateDbContext();
+        await using AppDbContext ctx = _factory.CreateDbContext();
         ctx.OperationTypes.Remove(type);
         await ctx.SaveChangesAsync(cancellationToken);
     }

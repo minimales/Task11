@@ -32,10 +32,10 @@ public class ReportService : IReportService
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        var wallet = await ResolveAccessibleWalletAsync(request.WalletId, cancellationToken);
+        WalletEntity wallet = await ResolveAccessibleWalletAsync(request.WalletId, cancellationToken);
 
-        var fromUtc = ToUtcDate(request.Date);
-        var toUtc = fromUtc.AddDays(1);
+        DateTime fromUtc = ToUtcDate(request.Date);
+        DateTime toUtc = fromUtc.AddDays(1);
 
         return await BuildReportAsync(wallet, fromUtc, toUtc, cancellationToken);
     }
@@ -46,17 +46,17 @@ public class ReportService : IReportService
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        var wallet = await ResolveAccessibleWalletAsync(request.WalletId, cancellationToken);
+        WalletEntity wallet = await ResolveAccessibleWalletAsync(request.WalletId, cancellationToken);
 
-        var fromUtc = ToUtcDate(request.StartDate);
-        var toUtc = ToUtcDate(request.EndDate).AddDays(1);
+        DateTime fromUtc = ToUtcDate(request.StartDate);
+        DateTime toUtc = ToUtcDate(request.EndDate).AddDays(1);
 
         return await BuildReportAsync(wallet, fromUtc, toUtc, cancellationToken);
     }
 
     private async Task<WalletEntity> ResolveAccessibleWalletAsync(Guid walletId, CancellationToken cancellationToken)
     {
-        var wallet = await _walletRepository.GetByIdAsync(walletId, cancellationToken)
+        WalletEntity wallet = await _walletRepository.GetByIdAsync(walletId, cancellationToken)
                      ?? throw new NotFoundException(nameof(WalletEntity), walletId);
 
         EnsureCanAccess(wallet);
@@ -81,8 +81,8 @@ public class ReportService : IReportService
         DateTime toUtc,
         CancellationToken cancellationToken)
     {
-        var totals = await _reportRepository.GetTotalsAsync(wallet.Id, fromUtc, toUtc, cancellationToken);
-        var operations = await _reportRepository.GetOperationsAsync(wallet.Id, fromUtc, toUtc, cancellationToken);
+        ReportTotals totals = await _reportRepository.GetTotalsAsync(wallet.Id, fromUtc, toUtc, cancellationToken);
+        IReadOnlyList<FinancialOperationEntity> operations = await _reportRepository.GetOperationsAsync(wallet.Id, fromUtc, toUtc, cancellationToken);
 
         return new ReportModel
         {
@@ -99,7 +99,7 @@ public class ReportService : IReportService
         Id = operation.Id,
         OperationTypeId = operation.OperationTypeId,
         OperationTypeName = operation.OperationType?.Name ?? string.Empty,
-        Kind = operation.OperationType!.Kind,
+        Kind = operation.OperationType?.Kind ?? default,
         Amount = operation.Amount,
         OccurredAtUtc = operation.OccurredAtUtc,
         Note = operation.Note
@@ -107,7 +107,7 @@ public class ReportService : IReportService
 
     private static DateTime ToUtcDate(DateTime date)
     {
-        var utc = date.Kind switch
+        DateTime utc = date.Kind switch
         {
             DateTimeKind.Utc => date,
             DateTimeKind.Local => date.ToUniversalTime(),

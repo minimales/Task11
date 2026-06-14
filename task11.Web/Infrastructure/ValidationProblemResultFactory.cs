@@ -12,7 +12,7 @@ public class ValidationProblemResultFactory : IFluentValidationAutoValidationRes
     {
         ArgumentNullException.ThrowIfNull(context);
 
-        var problemDetails = validationProblemDetails ?? new ValidationProblemDetails();
+        ValidationProblemDetails problemDetails = validationProblemDetails ?? new ValidationProblemDetails();
         problemDetails.Type = "about:blank";
         problemDetails.Title = "Validation failed";
         problemDetails.Status = StatusCodes.Status400BadRequest;

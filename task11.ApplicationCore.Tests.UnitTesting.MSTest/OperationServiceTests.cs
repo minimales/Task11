@@ -1,4 +1,5 @@
 using System.Globalization;
+using FluentValidation;
 using task11.ApplicationCore.Models;
 using task11.ApplicationCore.Services;
 using task11.ApplicationCore.Entities;
@@ -129,6 +130,36 @@ public class OperationServiceTests
 
         Assert.IsNotNull(response.Note);
         Assert.AreEqual("[Original: 100 EUR @ 40.5 on 2024-01-15 → 4050.00 UAH]", response.Note);
+    }
+
+    [TestMethod]
+    public async Task Test_OperationService_CreateAsync_ConvertedAmountExceedsCap_ThrowsValidationException()
+    {
+        WalletEntity wallet = SharedWallet("UAH");
+        DateTime date = new(2024, 1, 15, 0, 0, 0, DateTimeKind.Utc);
+
+        FakeOperationRepository repo = new();
+        repo.SeedType(IncomeType());
+        FakeWalletService wallets = new(wallet);
+
+        FakeCurrencyConverter fx = new(converted: 5_000_000_000m, rate: 50_000_000m);
+
+        OperationService service = new(repo, wallets, fx);
+
+        CreateOperationModel request = new()
+        {
+            WalletId = _walletId,
+            TypeId = _typeId,
+            Amount = 100m,
+            Date = date,
+            Note = null,
+            TransactionCurrency = "EUR"
+        };
+
+        await Assert.ThrowsExceptionAsync<ValidationException>(() => service.CreateAsync(request));
+
+        Assert.AreEqual(1, fx.ConvertCallCount);
+        Assert.AreEqual(0, repo.AddCallCount);
     }
 
     [TestMethod]

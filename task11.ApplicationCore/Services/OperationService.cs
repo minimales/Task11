@@ -1,4 +1,5 @@
 using System.Globalization;
+using FluentValidation;
 using task11.ApplicationCore.Currency;
 using task11.ApplicationCore.Models;
 using task11.ApplicationCore.Repositories.Abstractions;
@@ -9,6 +10,8 @@ namespace task11.ApplicationCore.Services;
 
 public class OperationService : IOperationService
 {
+    private const decimal _maxAmount = 1_000_000_000m;
+
     private readonly IOperationRepository _operations;
     private readonly IWalletService _wallets;
     private readonly ICurrencyConverter _currencyConverter;
@@ -31,18 +34,18 @@ public class OperationService : IOperationService
         Guid walletId,
         CancellationToken cancellationToken = default)
     {
-        var wallet = await _wallets.EnsureCanAccessAsync(walletId, cancellationToken);
+        WalletEntity wallet = await _wallets.EnsureCanAccessAsync(walletId, cancellationToken);
 
-        var operations = await _operations.ListByWalletAsync(walletId, cancellationToken);
+        IReadOnlyList<FinancialOperationEntity> operations = await _operations.ListByWalletAsync(walletId, cancellationToken);
         return operations.Select(o => Map(o, wallet.BaseCurrency)).ToList();
     }
 
     public async Task<OperationModel> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        var operation = await _operations.GetWithTypeAsync(id, cancellationToken)
+        FinancialOperationEntity operation = await _operations.GetWithTypeAsync(id, cancellationToken)
                         ?? throw new NotFoundException("Operation", id);
 
-        var wallet = await _wallets.EnsureCanAccessAsync(operation.WalletId, cancellationToken);
+        WalletEntity wallet = await _wallets.EnsureCanAccessAsync(operation.WalletId, cancellationToken);
         return Map(operation, wallet.BaseCurrency);
     }
 
@@ -52,15 +55,15 @@ public class OperationService : IOperationService
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        var wallet = await _wallets.EnsureCanAccessAsync(request.WalletId, cancellationToken);
+        WalletEntity wallet = await _wallets.EnsureCanAccessAsync(request.WalletId, cancellationToken);
 
-        var type = await _operations.GetTypeForWalletAsync(request.TypeId, wallet.Id, cancellationToken)
+        OperationTypeEntity type = await _operations.GetTypeForWalletAsync(request.TypeId, wallet.Id, cancellationToken)
                    ?? throw new NotFoundException(
                        $"Operation type '{request.TypeId}' was not found in wallet '{wallet.Id}'.");
 
-        var occurredAtUtc = ToUtc(request.Date);
+        DateTime occurredAtUtc = ToUtc(request.Date);
 
-        var (amount, note) = await ApplyConversionAsync(
+        (decimal amount, string note) = await ApplyConversionAsync(
             request.Amount,
             request.TransactionCurrency,
             wallet.BaseCurrency,
@@ -68,7 +71,7 @@ public class OperationService : IOperationService
             request.Note,
             cancellationToken);
 
-        var operation = new FinancialOperationEntity
+        FinancialOperationEntity operation = new FinancialOperationEntity
         {
             OperationTypeId = type.Id,
             WalletId = wallet.Id,
@@ -90,18 +93,18 @@ public class OperationService : IOperationService
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        var operation = await _operations.GetWithTypeAsync(id, cancellationToken)
+        FinancialOperationEntity operation = await _operations.GetWithTypeAsync(id, cancellationToken)
                         ?? throw new NotFoundException("Operation", id);
 
-        var wallet = await _wallets.EnsureCanAccessAsync(operation.WalletId, cancellationToken);
+        WalletEntity wallet = await _wallets.EnsureCanAccessAsync(operation.WalletId, cancellationToken);
 
-        var type = await _operations.GetTypeForWalletAsync(request.TypeId, wallet.Id, cancellationToken)
+        OperationTypeEntity type = await _operations.GetTypeForWalletAsync(request.TypeId, wallet.Id, cancellationToken)
                    ?? throw new NotFoundException(
                        $"Operation type '{request.TypeId}' was not found in wallet '{wallet.Id}'.");
 
-        var occurredAtUtc = ToUtc(request.Date);
+        DateTime occurredAtUtc = ToUtc(request.Date);
 
-        var (amount, note) = await ApplyConversionAsync(
+        (decimal amount, string note) = await ApplyConversionAsync(
             request.Amount,
             request.TransactionCurrency,
             wallet.BaseCurrency,
@@ -124,7 +127,7 @@ public class OperationService : IOperationService
 
     public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        var operation = await _operations.GetByIdAsync(id, cancellationToken)
+        FinancialOperationEntity operation = await _operations.GetByIdAsync(id, cancellationToken)
                         ?? throw new NotFoundException("Operation", id);
 
         await _wallets.EnsureCanAccessAsync(operation.WalletId, cancellationToken);
@@ -147,20 +150,26 @@ public class OperationService : IOperationService
             return (originalAmount, userNote);
         }
 
-        var tx = transactionCurrency.ToUpperInvariant();
-        var (converted, rate) = await _currencyConverter.ConvertAsync(
+        string tx = transactionCurrency.ToUpperInvariant();
+        (decimal converted, decimal rate) = await _currencyConverter.ConvertAsync(
             originalAmount,
             tx,
             baseCurrency,
             occurredAtUtc.Date,
             cancellationToken);
 
-        var audit = string.Format(
+        if (converted > _maxAmount)
+        {
+            throw new ValidationException(
+                $"The converted amount ({converted:0.##} {baseCurrency}) exceeds the maximum allowed value of {_maxAmount:0.##}.");
+        }
+
+        string audit = string.Format(
             CultureInfo.InvariantCulture,
             "[Original: {0:0.##} {1} @ {2:0.######} on {3:yyyy-MM-dd} → {4:0.00} {5}]",
             originalAmount, tx, rate, occurredAtUtc.Date, converted, baseCurrency);
 
-        var note = string.IsNullOrWhiteSpace(userNote) ? audit : $"{userNote} {audit}";
+        string note = string.IsNullOrWhiteSpace(userNote) ? audit : $"{userNote} {audit}";
         return (converted, note);
     }
 

@@ -16,7 +16,7 @@ public class UserRepository : IUserRepository
 
     public async Task<UserEntity?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        await using var ctx = _factory.CreateDbContext();
+        await using AppDbContext ctx = _factory.CreateDbContext();
         return await ctx.Users
             .AsNoTracking()
             .FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
@@ -24,7 +24,7 @@ public class UserRepository : IUserRepository
 
     public async Task<IReadOnlyList<UserEntity>> GetAllAsync(CancellationToken cancellationToken = default)
     {
-        await using var ctx = _factory.CreateDbContext();
+        await using AppDbContext ctx = _factory.CreateDbContext();
         return await ctx.Users
             .AsNoTracking()
             .OrderBy(u => u.Username)
@@ -35,7 +35,7 @@ public class UserRepository : IUserRepository
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(username);
 
-        await using var ctx = _factory.CreateDbContext();
+        await using AppDbContext ctx = _factory.CreateDbContext();
         return await ctx.Users
             .AsNoTracking()
             .FirstOrDefaultAsync(u => u.Username == username, cancellationToken);
@@ -45,7 +45,7 @@ public class UserRepository : IUserRepository
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(username);
 
-        await using var ctx = _factory.CreateDbContext();
+        await using AppDbContext ctx = _factory.CreateDbContext();
         return await ctx.Users
             .AsNoTracking()
             .AnyAsync(u => u.Username == username && (excludeId == null || u.Id != excludeId), cancellationToken);
@@ -55,25 +55,31 @@ public class UserRepository : IUserRepository
     {
         ArgumentNullException.ThrowIfNull(user);
 
-        await using var ctx = _factory.CreateDbContext();
+        await using AppDbContext ctx = _factory.CreateDbContext();
         await ctx.Users.AddAsync(user, cancellationToken);
-        await ctx.SaveChangesAsync(cancellationToken);
+        await UniqueViolationTranslator.SaveChangesTranslatingUniqueViolationAsync(
+            ctx,
+            $"A user named '{user.Username}' already exists.",
+            cancellationToken);
     }
 
     public async Task UpdateAsync(UserEntity user, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(user);
 
-        await using var ctx = _factory.CreateDbContext();
+        await using AppDbContext ctx = _factory.CreateDbContext();
         ctx.Users.Update(user);
-        await ctx.SaveChangesAsync(cancellationToken);
+        await UniqueViolationTranslator.SaveChangesTranslatingUniqueViolationAsync(
+            ctx,
+            $"A user named '{user.Username}' already exists.",
+            cancellationToken);
     }
 
     public async Task SoftDeleteAsync(UserEntity user, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(user);
 
-        await using var ctx = _factory.CreateDbContext();
+        await using AppDbContext ctx = _factory.CreateDbContext();
 
         ctx.Users.Remove(user);
         await ctx.SaveChangesAsync(cancellationToken);

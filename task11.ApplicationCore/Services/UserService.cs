@@ -22,13 +22,13 @@ public class UserService : IUserService
 
     public async Task<IReadOnlyList<UserModel>> GetAllAsync(CancellationToken cancellationToken = default)
     {
-        var users = await _users.GetAllAsync(cancellationToken);
+        IReadOnlyList<UserEntity> users = await _users.GetAllAsync(cancellationToken);
         return users.Select(Map).ToList();
     }
 
     public async Task<UserModel> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        var user = await _users.GetByIdAsync(id, cancellationToken)
+        UserEntity user = await _users.GetByIdAsync(id, cancellationToken)
                    ?? throw new NotFoundException(nameof(UserEntity), id);
 
         return Map(user);
@@ -43,7 +43,7 @@ public class UserService : IUserService
             throw new ConflictException($"Username '{request.Username}' is already taken.");
         }
 
-        var user = new UserEntity
+        UserEntity user = new UserEntity
         {
             Username = request.Username,
             PasswordHash = _passwordHasher.Hash(request.Password),
@@ -59,7 +59,7 @@ public class UserService : IUserService
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        var user = await _users.GetByIdAsync(id, cancellationToken)
+        UserEntity user = await _users.GetByIdAsync(id, cancellationToken)
                    ?? throw new NotFoundException(nameof(UserEntity), id);
 
         if (await _users.UsernameExistsAsync(request.Username, excludeId: id, cancellationToken))
@@ -82,7 +82,7 @@ public class UserService : IUserService
 
     public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        var user = await _users.GetByIdAsync(id, cancellationToken)
+        UserEntity user = await _users.GetByIdAsync(id, cancellationToken)
                    ?? throw new NotFoundException(nameof(UserEntity), id);
 
         await _users.SoftDeleteAsync(user, cancellationToken);

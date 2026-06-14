@@ -25,13 +25,13 @@ public class OperationTypeService : IOperationTypeService
     {
         await _walletService.EnsureCanAccessAsync(walletId, cancellationToken);
 
-        var types = await _repository.ListByWalletAsync(walletId, cancellationToken);
+        IReadOnlyList<OperationTypeEntity> types = await _repository.ListByWalletAsync(walletId, cancellationToken);
         return types.Select(Map).ToList();
     }
 
     public async Task<OperationTypeModel> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        var type = await GetOwnedTypeAsync(id, cancellationToken);
+        OperationTypeEntity type = await GetOwnedTypeAsync(id, cancellationToken);
         return Map(type);
     }
 
@@ -50,7 +50,7 @@ public class OperationTypeService : IOperationTypeService
                 $"An operation type named '{request.Name}' already exists in this wallet.");
         }
 
-        var type = new OperationTypeEntity
+        OperationTypeEntity type = new OperationTypeEntity
         {
             WalletId = walletId,
             Name = request.Name,
@@ -70,7 +70,7 @@ public class OperationTypeService : IOperationTypeService
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        var type = await GetOwnedTypeAsync(id, cancellationToken);
+        OperationTypeEntity type = await GetOwnedTypeAsync(id, cancellationToken);
 
         if (await _repository.NameExistsAsync(type.WalletId, request.Name, excludeId: type.Id, cancellationToken))
         {
@@ -89,14 +89,19 @@ public class OperationTypeService : IOperationTypeService
 
     public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        var type = await GetOwnedTypeAsync(id, cancellationToken);
+        OperationTypeEntity type = await GetOwnedTypeAsync(id, cancellationToken);
+
+        if (await _repository.HasOperationsAsync(type.Id, cancellationToken))
+        {
+            throw new ConflictException("An operation type with operations cannot be deleted.");
+        }
 
         await _repository.SoftDeleteAsync(type, cancellationToken);
     }
 
     private async Task<OperationTypeEntity> GetOwnedTypeAsync(Guid id, CancellationToken cancellationToken)
     {
-        var type = await _repository.GetByIdAsync(id, cancellationToken)
+        OperationTypeEntity type = await _repository.GetByIdAsync(id, cancellationToken)
                    ?? throw new NotFoundException(nameof(OperationTypeEntity), id);
 
         await _walletService.EnsureCanAccessAsync(type.WalletId, cancellationToken);

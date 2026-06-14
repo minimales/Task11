@@ -37,7 +37,7 @@ public class AuthService : IAuthService
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        var user = await _users.GetByUsernameAsync(request.Username, cancellationToken);
+        Entities.UserEntity? user = await _users.GetByUsernameAsync(request.Username, cancellationToken);
 
         string storedHash = user?.PasswordHash ?? _dummyHash;
         bool passwordMatches = _passwordHasher.Verify(request.Password, storedHash);
@@ -50,7 +50,7 @@ public class AuthService : IAuthService
             return null;
         }
 
-        var (token, expiresAtUtc) = _tokenGenerator.Generate(user!);
+        (string token, DateTime expiresAtUtc) = _tokenGenerator.Generate(user!);
 
         _logger.LogInformation("User '{Username}' authenticated successfully.", user!.Username);
 

@@ -27,7 +27,7 @@ public class AuthController : ControllerBase
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Login([FromBody] LoginModel request, CancellationToken cancellationToken)
     {
-        var result = await _authService.LoginAsync(request, cancellationToken);
+        AuthTokenModel? result = await _authService.LoginAsync(request, cancellationToken);
         return result is null
             ? Unauthorized()
             : Ok(result);
@@ -38,7 +38,7 @@ public class AuthController : ControllerBase
     [ProducesResponseType(typeof(IReadOnlyList<UserModel>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetUsers(CancellationToken cancellationToken)
     {
-        var users = await _userService.GetAllAsync(cancellationToken);
+        IReadOnlyList<UserModel> users = await _userService.GetAllAsync(cancellationToken);
         return Ok(users);
     }
 
@@ -48,7 +48,7 @@ public class AuthController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetUser(Guid id, CancellationToken cancellationToken)
     {
-        var user = await _userService.GetByIdAsync(id, cancellationToken);
+        UserModel user = await _userService.GetByIdAsync(id, cancellationToken);
         return Ok(user);
     }
 
@@ -59,7 +59,7 @@ public class AuthController : ControllerBase
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> CreateUser([FromBody] CreateUserModel request, CancellationToken cancellationToken)
     {
-        var user = await _userService.CreateAsync(request, cancellationToken);
+        UserModel user = await _userService.CreateAsync(request, cancellationToken);
         return CreatedAtAction(nameof(GetUser), new { id = user.Id }, user);
     }
 
@@ -71,7 +71,7 @@ public class AuthController : ControllerBase
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> UpdateUser(Guid id, [FromBody] UpdateUserModel request, CancellationToken cancellationToken)
     {
-        var user = await _userService.UpdateAsync(id, request, cancellationToken);
+        UserModel user = await _userService.UpdateAsync(id, request, cancellationToken);
         return Ok(user);
     }
 

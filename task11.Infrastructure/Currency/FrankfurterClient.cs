@@ -46,8 +46,8 @@ public class FrankfurterClient
         ArgumentException.ThrowIfNullOrWhiteSpace(from);
         ArgumentException.ThrowIfNullOrWhiteSpace(to);
 
-        var datePath = date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
-        var requestUri = $"/v1/{datePath}?base={Uri.EscapeDataString(from)}&symbols={Uri.EscapeDataString(to)}";
+        string datePath = date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+        string requestUri = $"/v1/{datePath}?base={Uri.EscapeDataString(from)}&symbols={Uri.EscapeDataString(to)}";
 
         HttpResponseMessage response;
         try
@@ -75,7 +75,7 @@ public class FrankfurterClient
         FrankfurterResponse? payload;
         try
         {
-            await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+            await using Stream stream = await response.Content.ReadAsStreamAsync(cancellationToken);
             payload = await JsonSerializer.DeserializeAsync<FrankfurterResponse>(
                 stream, _serializerOptions, cancellationToken);
         }
@@ -85,7 +85,7 @@ public class FrankfurterClient
                 $"The FX provider returned an unparsable response for {from}->{to} on {datePath}.", ex);
         }
 
-        if (payload?.Rates is null || !payload.Rates.TryGetValue(to, out var rate))
+        if (payload?.Rates is null || !payload.Rates.TryGetValue(to, out decimal rate))
         {
             throw new FxUnavailableException(
                 $"The FX provider did not return a rate for {from}->{to} on {datePath}.");

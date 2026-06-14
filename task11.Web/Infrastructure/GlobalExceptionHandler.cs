@@ -28,7 +28,7 @@ public class GlobalExceptionHandler : IExceptionHandler
         Exception exception,
         CancellationToken cancellationToken)
     {
-        var (status, title) = exception switch
+        (int status, string title) = exception switch
         {
             NotFoundException => (StatusCodes.Status404NotFound, "Resource not found"),
             ForbiddenException => (StatusCodes.Status403Forbidden, "Forbidden"),
@@ -48,7 +48,7 @@ public class GlobalExceptionHandler : IExceptionHandler
             _logger.LogWarning("Request failed ({Status}): {Message}", status, exception.Message);
         }
 
-        var problemDetails = new ProblemDetails
+        ProblemDetails problemDetails = new ProblemDetails
         {
             Type = "about:blank",
             Title = title,
@@ -59,7 +59,7 @@ public class GlobalExceptionHandler : IExceptionHandler
 
         if (exception is ValidationException validationException)
         {
-            var errors = validationException.Errors
+            Dictionary<string, string[]> errors = validationException.Errors
                 .GroupBy(e => e.PropertyName)
                 .ToDictionary(g => g.Key, g => g.Select(e => e.ErrorMessage).ToArray());
             problemDetails.Extensions["errors"] = errors;

@@ -16,7 +16,7 @@ public class WalletRepository : IWalletRepository
 
     public async Task<WalletEntity?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        await using var ctx = _factory.CreateDbContext();
+        await using AppDbContext ctx = _factory.CreateDbContext();
         return await ctx.Wallets
             .AsNoTracking()
             .FirstOrDefaultAsync(w => w.Id == id, cancellationToken);
@@ -27,7 +27,7 @@ public class WalletRepository : IWalletRepository
         bool isAdmin,
         CancellationToken cancellationToken = default)
     {
-        await using var ctx = _factory.CreateDbContext();
+        await using AppDbContext ctx = _factory.CreateDbContext();
 
         IQueryable<WalletEntity> query = ctx.Wallets.AsNoTracking();
 
@@ -44,19 +44,19 @@ public class WalletRepository : IWalletRepository
 
     public async Task<bool> HasOperationsAsync(Guid walletId, CancellationToken cancellationToken = default)
     {
-        await using var ctx = _factory.CreateDbContext();
+        await using AppDbContext ctx = _factory.CreateDbContext();
 
         return await ctx.FinancialOperations
             .AsNoTracking()
             .IgnoreQueryFilters()
-            .AnyAsync(o => o.WalletId == walletId, cancellationToken);
+            .AnyAsync(o => o.WalletId == walletId && !o.IsDeleted, cancellationToken);
     }
 
     public async Task AddAsync(WalletEntity wallet, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(wallet);
 
-        await using var ctx = _factory.CreateDbContext();
+        await using AppDbContext ctx = _factory.CreateDbContext();
         await ctx.Wallets.AddAsync(wallet, cancellationToken);
         await ctx.SaveChangesAsync(cancellationToken);
     }
@@ -65,7 +65,7 @@ public class WalletRepository : IWalletRepository
     {
         ArgumentNullException.ThrowIfNull(wallet);
 
-        await using var ctx = _factory.CreateDbContext();
+        await using AppDbContext ctx = _factory.CreateDbContext();
         ctx.Wallets.Update(wallet);
         await ctx.SaveChangesAsync(cancellationToken);
     }
@@ -74,7 +74,7 @@ public class WalletRepository : IWalletRepository
     {
         ArgumentNullException.ThrowIfNull(wallet);
 
-        await using var ctx = _factory.CreateDbContext();
+        await using AppDbContext ctx = _factory.CreateDbContext();
         ctx.Wallets.Remove(wallet);
         await ctx.SaveChangesAsync(cancellationToken);
     }

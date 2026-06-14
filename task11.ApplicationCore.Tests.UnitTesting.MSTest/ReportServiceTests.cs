@@ -132,6 +132,40 @@ public class ReportServiceTests
         Assert.IsFalse(result.Operations.Any(o => o.Amount == 9999m || o.Amount == 8888m));
     }
 
+    [TestMethod]
+    public async Task Test_ReportService_GetDailyAsync_OperationWithNullOperationTypeNav_DoesNotThrow_AndUsesSafeDefaults()
+    {
+        WalletEntity wallet = SharedWallet("USD");
+
+        FinancialOperationEntity orphan = new()
+        {
+            Id = Guid.NewGuid(),
+            OperationTypeId = Guid.NewGuid(),
+            OperationType = null!,
+            WalletId = _walletId,
+            Amount = 42m,
+            OccurredAtUtc = new DateTime(2026, 6, 13, 9, 0, 0, DateTimeKind.Utc)
+        };
+
+        FakeReportRepository reportRepository = new(
+            new ReportTotals(TotalIncome: 42m, TotalExpense: 0m),
+            new[] { orphan });
+
+        ReportService service = new(
+            reportRepository,
+            new FakeWalletRepository(wallet),
+            new FakeCurrentUser());
+
+        ReportModel result = await service.GetDailyAsync(
+            new DailyReportModel { WalletId = _walletId, Date = new DateTime(2026, 6, 13) });
+
+        Assert.AreEqual(1, result.Operations.Count);
+        ReportOperationLineModel line = result.Operations[0];
+        Assert.AreEqual(string.Empty, line.OperationTypeName);
+        Assert.AreEqual(default(OperationKind), line.Kind);
+        Assert.AreEqual(42m, line.Amount);
+    }
+
     private static FinancialOperationEntity Operation(OperationTypeEntity type, decimal amount, DateTime occurredAtUtc, bool isDeleted = false) => new()
     {
         OperationTypeId = type.Id,

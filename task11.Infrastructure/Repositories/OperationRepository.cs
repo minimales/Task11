@@ -16,7 +16,7 @@ public class OperationRepository : IOperationRepository
 
     public async Task<FinancialOperationEntity?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        await using var ctx = _factory.CreateDbContext();
+        await using AppDbContext ctx = _factory.CreateDbContext();
         return await ctx.FinancialOperations
             .AsNoTracking()
             .FirstOrDefaultAsync(o => o.Id == id, cancellationToken);
@@ -24,7 +24,7 @@ public class OperationRepository : IOperationRepository
 
     public async Task<FinancialOperationEntity?> GetWithTypeAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        await using var ctx = _factory.CreateDbContext();
+        await using AppDbContext ctx = _factory.CreateDbContext();
         return await ctx.FinancialOperations
             .AsNoTracking()
             .Include(o => o.OperationType)
@@ -35,7 +35,7 @@ public class OperationRepository : IOperationRepository
         Guid walletId,
         CancellationToken cancellationToken = default)
     {
-        await using var ctx = _factory.CreateDbContext();
+        await using AppDbContext ctx = _factory.CreateDbContext();
         return await ctx.FinancialOperations
             .AsNoTracking()
             .Include(o => o.OperationType)
@@ -50,7 +50,7 @@ public class OperationRepository : IOperationRepository
         Guid walletId,
         CancellationToken cancellationToken = default)
     {
-        await using var ctx = _factory.CreateDbContext();
+        await using AppDbContext ctx = _factory.CreateDbContext();
         return await ctx.OperationTypes
             .AsNoTracking()
             .FirstOrDefaultAsync(t => t.Id == typeId && t.WalletId == walletId, cancellationToken);
@@ -60,7 +60,7 @@ public class OperationRepository : IOperationRepository
     {
         ArgumentNullException.ThrowIfNull(operation);
 
-        await using var ctx = _factory.CreateDbContext();
+        await using AppDbContext ctx = _factory.CreateDbContext();
         await ctx.FinancialOperations.AddAsync(operation, cancellationToken);
         await ctx.SaveChangesAsync(cancellationToken);
     }
@@ -69,7 +69,7 @@ public class OperationRepository : IOperationRepository
     {
         ArgumentNullException.ThrowIfNull(operation);
 
-        await using var ctx = _factory.CreateDbContext();
+        await using AppDbContext ctx = _factory.CreateDbContext();
         ctx.FinancialOperations.Update(operation);
         await ctx.SaveChangesAsync(cancellationToken);
     }
@@ -78,7 +78,7 @@ public class OperationRepository : IOperationRepository
     {
         ArgumentNullException.ThrowIfNull(operation);
 
-        await using var ctx = _factory.CreateDbContext();
+        await using AppDbContext ctx = _factory.CreateDbContext();
         ctx.FinancialOperations.Remove(operation);
         await ctx.SaveChangesAsync(cancellationToken);
     }

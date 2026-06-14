@@ -28,7 +28,7 @@ public class ReportsController : ControllerBase
         [FromQuery] DailyReportModel request,
         CancellationToken cancellationToken)
     {
-        var report = await _reportService.GetDailyAsync(request, cancellationToken);
+        ReportModel report = await _reportService.GetDailyAsync(request, cancellationToken);
         return Ok(report);
     }
 
@@ -41,7 +41,7 @@ public class ReportsController : ControllerBase
         [FromQuery] PeriodReportModel request,
         CancellationToken cancellationToken)
     {
-        var report = await _reportService.GetPeriodAsync(request, cancellationToken);
+        ReportModel report = await _reportService.GetPeriodAsync(request, cancellationToken);
         return Ok(report);
     }
 }

@@ -13,9 +13,9 @@ public class CurrentUser : ICurrentUser
     {
         get
         {
-            var sub = Principal?.FindFirstValue(ClaimTypes.NameIdentifier)
+            string? sub = Principal?.FindFirstValue(ClaimTypes.NameIdentifier)
                       ?? Principal?.FindFirstValue("sub");
-            return Guid.TryParse(sub, out var id) ? id : null;
+            return Guid.TryParse(sub, out Guid id) ? id : null;
         }
     }
 

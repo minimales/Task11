@@ -10,18 +10,18 @@ public static class ModelBuilderExtensions
     {
         ArgumentNullException.ThrowIfNull(modelBuilder);
 
-        foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+        foreach (Microsoft.EntityFrameworkCore.Metadata.IMutableEntityType entityType in modelBuilder.Model.GetEntityTypes())
         {
-            var clrType = entityType.ClrType;
+            Type clrType = entityType.ClrType;
             if (!typeof(BaseEntity).IsAssignableFrom(clrType))
             {
                 continue;
             }
 
-            var parameter = Expression.Parameter(clrType, "e");
-            var property = Expression.Property(parameter, nameof(BaseEntity.IsDeleted));
-            var notDeleted = Expression.Not(property);
-            var lambda = Expression.Lambda(notDeleted, parameter);
+            ParameterExpression parameter = Expression.Parameter(clrType, "e");
+            MemberExpression property = Expression.Property(parameter, nameof(BaseEntity.IsDeleted));
+            UnaryExpression notDeleted = Expression.Not(property);
+            LambdaExpression lambda = Expression.Lambda(notDeleted, parameter);
 
             modelBuilder.Entity(clrType).HasQueryFilter(lambda);
         }

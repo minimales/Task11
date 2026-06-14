@@ -43,7 +43,7 @@ public static class LogSanitizer
             Redact(node);
             return node.ToJsonString();
         }
-        catch (JsonException)
+        catch (Exception)
         {
             return $"[omitted: {byteCount} bytes]";
         }
@@ -54,7 +54,7 @@ public static class LogSanitizer
         switch (node)
         {
             case JsonObject obj:
-                foreach (var property in obj.ToList())
+                foreach (KeyValuePair<string, JsonNode?> property in obj.ToList())
                 {
                     if (_denyList.Contains(property.Key))
                     {
@@ -68,7 +68,7 @@ public static class LogSanitizer
                 break;
 
             case JsonArray array:
-                foreach (var item in array)
+                foreach (JsonNode? item in array)
                 {
                     Redact(item);
                 }

@@ -7,7 +7,6 @@ namespace task11.Web.Controllers;
 
 [ApiController]
 [Route("api/wallets")]
-[Produces("application/json")]
 public class WalletsController : ControllerBase
 {
     private readonly IWalletService _walletService;
@@ -23,7 +22,7 @@ public class WalletsController : ControllerBase
     [ProducesResponseType(typeof(IReadOnlyList<WalletModel>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyList<WalletModel>>> GetAll(CancellationToken cancellationToken)
     {
-        var wallets = await _walletService.GetAccessibleAsync(cancellationToken);
+        IReadOnlyList<WalletModel> wallets = await _walletService.GetAccessibleAsync(cancellationToken);
         return Ok(wallets);
     }
 
@@ -33,7 +32,7 @@ public class WalletsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<WalletModel>> GetById(Guid id, CancellationToken cancellationToken)
     {
-        var wallet = await _walletService.GetByIdAsync(id, cancellationToken);
+        WalletModel wallet = await _walletService.GetByIdAsync(id, cancellationToken);
         return Ok(wallet);
     }
 
@@ -45,7 +44,7 @@ public class WalletsController : ControllerBase
         [FromBody] CreateWalletModel request,
         CancellationToken cancellationToken)
     {
-        var wallet = await _walletService.CreateAsync(request, cancellationToken);
+        WalletModel wallet = await _walletService.CreateAsync(request, cancellationToken);
         return CreatedAtAction(nameof(GetById), new { id = wallet.Id }, wallet);
     }
 
@@ -61,7 +60,7 @@ public class WalletsController : ControllerBase
         [FromBody] UpdateWalletModel request,
         CancellationToken cancellationToken)
     {
-        var wallet = await _walletService.UpdateAsync(id, request, cancellationToken);
+        WalletModel wallet = await _walletService.UpdateAsync(id, request, cancellationToken);
         return Ok(wallet);
     }
 

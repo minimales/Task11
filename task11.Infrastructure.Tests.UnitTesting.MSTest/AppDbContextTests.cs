@@ -299,7 +299,7 @@ public class AppDbContextTests
     public void Test_AppDbContext_Model_AllEntitiesHaveSoftDeleteQueryFilter()
     {
         using AppDbContext context = RelationalModel();
-        foreach (var entityType in context.Model.GetEntityTypes())
+        foreach (Microsoft.EntityFrameworkCore.Metadata.IEntityType entityType in context.Model.GetEntityTypes())
         {
             Assert.IsNotNull(
                 entityType.GetQueryFilter(),

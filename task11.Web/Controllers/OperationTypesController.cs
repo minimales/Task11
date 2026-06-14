@@ -7,7 +7,6 @@ namespace task11.Web.Controllers;
 
 [ApiController]
 [Authorize]
-[Produces("application/json")]
 public class OperationTypesController : ControllerBase
 {
     private readonly IOperationTypeService _service;
@@ -27,7 +26,7 @@ public class OperationTypesController : ControllerBase
         Guid walletId,
         CancellationToken cancellationToken)
     {
-        var result = await _service.GetByWalletAsync(walletId, cancellationToken);
+        IReadOnlyList<OperationTypeModel> result = await _service.GetByWalletAsync(walletId, cancellationToken);
         return Ok(result);
     }
 
@@ -42,7 +41,7 @@ public class OperationTypesController : ControllerBase
         [FromBody] CreateOperationTypeModel request,
         CancellationToken cancellationToken)
     {
-        var created = await _service.CreateAsync(walletId, request, cancellationToken);
+        OperationTypeModel created = await _service.CreateAsync(walletId, request, cancellationToken);
         return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
     }
 
@@ -54,7 +53,7 @@ public class OperationTypesController : ControllerBase
         Guid id,
         CancellationToken cancellationToken)
     {
-        var result = await _service.GetByIdAsync(id, cancellationToken);
+        OperationTypeModel result = await _service.GetByIdAsync(id, cancellationToken);
         return Ok(result);
     }
 
@@ -69,7 +68,7 @@ public class OperationTypesController : ControllerBase
         [FromBody] UpdateOperationTypeModel request,
         CancellationToken cancellationToken)
     {
-        var updated = await _service.UpdateAsync(id, request, cancellationToken);
+        OperationTypeModel updated = await _service.UpdateAsync(id, request, cancellationToken);
         return Ok(updated);
     }
 

@@ -12,7 +12,7 @@ public static class ProblemDetailsEnricher
 
         if (httpContext is not null)
         {
-            string? correlationId = httpContext.Items.TryGetValue(CorrelationIdMiddleware.ItemsKey, out var cid)
+            string? correlationId = httpContext.Items.TryGetValue(CorrelationIdMiddleware.ItemsKey, out object? cid)
                 ? cid?.ToString()
                 : null;
 

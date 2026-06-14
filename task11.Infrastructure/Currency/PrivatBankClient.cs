@@ -73,8 +73,8 @@ public class PrivatBankClient
 
     private async Task<decimal> GetUahPerUnitAsync(string currency, DateTime date, CancellationToken cancellationToken)
     {
-        var datePath = date.ToString("dd.MM.yyyy", CultureInfo.InvariantCulture);
-        var requestUri = $"/p24api/exchange_rates?json&date={datePath}";
+        string datePath = date.ToString("dd.MM.yyyy", CultureInfo.InvariantCulture);
+        string requestUri = $"/p24api/exchange_rates?json&date={datePath}";
 
         HttpResponseMessage response;
         try
@@ -99,7 +99,7 @@ public class PrivatBankClient
         PrivatBankResponse? payload;
         try
         {
-            await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+            await using Stream stream = await response.Content.ReadAsStreamAsync(cancellationToken);
             payload = await JsonSerializer.DeserializeAsync<PrivatBankResponse>(
                 stream, _serializerOptions, cancellationToken);
         }
@@ -109,7 +109,7 @@ public class PrivatBankClient
                 $"PrivatBank returned an unparsable response for {currency}/UAH on {datePath}.", ex);
         }
 
-        var entry = payload?.ExchangeRate?.FirstOrDefault(
+        ExchangeRateEntry? entry = payload?.ExchangeRate?.FirstOrDefault(
             r => string.Equals(r.Currency, currency, StringComparison.OrdinalIgnoreCase));
 
         if (entry is null || entry.SaleRateNB <= 0m)

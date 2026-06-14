@@ -24,7 +24,7 @@ public class WalletService : IWalletService
 
     public async Task<IReadOnlyList<WalletModel>> GetAccessibleAsync(CancellationToken cancellationToken = default)
     {
-        var wallets = await _wallets.ListAccessibleAsync(
+        IReadOnlyList<WalletEntity> wallets = await _wallets.ListAccessibleAsync(
             _currentUser.UserId, _currentUser.IsAdmin, cancellationToken);
 
         return wallets.Select(Map).ToList();
@@ -32,7 +32,7 @@ public class WalletService : IWalletService
 
     public async Task<WalletModel> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        var wallet = await EnsureCanAccessAsync(id, cancellationToken);
+        WalletEntity wallet = await EnsureCanAccessAsync(id, cancellationToken);
         return Map(wallet);
     }
 
@@ -40,11 +40,11 @@ public class WalletService : IWalletService
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        var currency = string.IsNullOrWhiteSpace(request.BaseCurrency)
+        string currency = string.IsNullOrWhiteSpace(request.BaseCurrency)
             ? _defaultCurrency
             : request.BaseCurrency.Trim().ToUpperInvariant();
 
-        var wallet = new WalletEntity
+        WalletEntity wallet = new WalletEntity
         {
             Name = request.Name.Trim(),
             BaseCurrency = currency,
@@ -61,9 +61,9 @@ public class WalletService : IWalletService
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        var wallet = await EnsureCanAccessAsync(id, cancellationToken);
+        WalletEntity wallet = await EnsureCanAccessAsync(id, cancellationToken);
 
-        var newCurrency = request.BaseCurrency.Trim().ToUpperInvariant();
+        string newCurrency = request.BaseCurrency.Trim().ToUpperInvariant();
 
         if (!string.Equals(newCurrency, wallet.BaseCurrency, StringComparison.OrdinalIgnoreCase))
         {
@@ -86,14 +86,14 @@ public class WalletService : IWalletService
 
     public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        var wallet = await EnsureCanAccessAsync(id, cancellationToken);
+        WalletEntity wallet = await EnsureCanAccessAsync(id, cancellationToken);
 
         await _wallets.SoftDeleteAsync(wallet, cancellationToken);
     }
 
     public async Task<WalletEntity> EnsureCanAccessAsync(Guid walletId, CancellationToken cancellationToken = default)
     {
-        var wallet = await _wallets.GetByIdAsync(walletId, cancellationToken)
+        WalletEntity wallet = await _wallets.GetByIdAsync(walletId, cancellationToken)
             ?? throw new NotFoundException("Wallet", walletId);
 
         if (!CanAccess(wallet))

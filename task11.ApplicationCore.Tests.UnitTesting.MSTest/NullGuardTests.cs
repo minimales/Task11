@@ -325,6 +325,9 @@ internal class FakeOperationTypeRepository : IOperationTypeRepository
     public Task<bool> NameExistsAsync(Guid walletId, string name, Guid? excludeId = null, CancellationToken cancellationToken = default)
         => Task.FromResult(false);
 
+    public Task<bool> HasOperationsAsync(Guid operationTypeId, CancellationToken cancellationToken = default)
+        => Task.FromResult(false);
+
     public Task AddAsync(OperationTypeEntity type, CancellationToken cancellationToken = default)
         => Task.CompletedTask;
 

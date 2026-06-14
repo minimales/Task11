@@ -18,7 +18,7 @@ public class CorrelationIdMiddleware
 
     public async Task InvokeAsync(HttpContext context)
     {
-        string correlationId = context.Request.Headers.TryGetValue(HeaderName, out var existing)
+        string correlationId = context.Request.Headers.TryGetValue(HeaderName, out Microsoft.Extensions.Primitives.StringValues existing)
                                && !string.IsNullOrWhiteSpace(existing)
             ? existing.ToString()
             : Guid.NewGuid().ToString();
