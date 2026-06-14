@@ -2,7 +2,6 @@ using System.Net;
 using System.Text;
 using Microsoft.Extensions.Caching.Memory;
 using task11.ApplicationCore;
-using task11.ApplicationCore.Currency;
 using task11.Infrastructure.Currency;
 
 [TestClass]

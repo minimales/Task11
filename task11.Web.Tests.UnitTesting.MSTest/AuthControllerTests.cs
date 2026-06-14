@@ -38,31 +38,22 @@ public class AuthControllerTests
         Assert.AreEqual(token.ExpiresAtUtc, body.ExpiresAtUtc);
     }
 
-    [TestMethod]
-    public async Task Test_AuthController_Login_BadCredentials_ReturnsUnauthorized()
+    [DataTestMethod]
+    [DataRow("admin", "wrong-password")]
+    [DataRow("nobody", "Secret123!")]
+    public async Task Test_AuthController_Login_InvalidCredentials_ReturnsUnauthorized(
+        string username,
+        string password)
     {
         FakeAuthService authService = new(_validUser, _validPassword, SampleToken());
         AuthController controller = CreateController(authService);
 
         IActionResult result = await controller.Login(
-            new LoginModel { Username = _validUser, Password = "wrong-password" },
+            new LoginModel { Username = username, Password = password },
             CancellationToken.None);
 
         UnauthorizedResult unauthorized = (UnauthorizedResult)result;
         Assert.AreEqual(_unauthorizedStatusCode, unauthorized.StatusCode);
-    }
-
-    [TestMethod]
-    public async Task Test_AuthController_Login_UnknownUser_ReturnsUnauthorized()
-    {
-        FakeAuthService authService = new(_validUser, _validPassword, SampleToken());
-        AuthController controller = CreateController(authService);
-
-        IActionResult result = await controller.Login(
-            new LoginModel { Username = "nobody", Password = _validPassword },
-            CancellationToken.None);
-
-        Assert.IsInstanceOfType(result, typeof(UnauthorizedResult));
     }
 
     [TestMethod]

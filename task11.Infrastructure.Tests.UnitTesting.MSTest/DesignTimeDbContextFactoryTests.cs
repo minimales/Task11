@@ -1,6 +1,4 @@
-using task11.ApplicationCore;
 using task11.Infrastructure.Persistence;
-using task11.Infrastructure.Time;
 
 [TestClass]
 public class DesignTimeDbContextFactoryTests

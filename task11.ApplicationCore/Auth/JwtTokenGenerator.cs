@@ -3,7 +3,6 @@ using System.Security.Claims;
 using System.Text;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
-using task11.ApplicationCore;
 using task11.ApplicationCore.Entities;
 
 namespace task11.ApplicationCore.Auth;

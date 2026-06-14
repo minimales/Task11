@@ -1,3 +1,4 @@
+using System.Globalization;
 using task11.ApplicationCore.Models;
 using task11.ApplicationCore.Services;
 using task11.ApplicationCore.Entities;
@@ -67,9 +68,13 @@ public class OperationServiceTests
         Assert.AreEqual(date.Date, fx.LastDate);
     }
 
-    [TestMethod]
-    public async Task Test_OperationService_CreateAsync_TransactionCurrencyEqualsBase_DoesNotCallFx()
+    [DataTestMethod]
+    [DataRow("250.50", "Rent", "UAH")]
+    [DataRow("99", null, null)]
+    public async Task Test_OperationService_CreateAsync_NoForeignConversion_DoesNotCallFx(
+        string amount, string? note, string? transactionCurrency)
     {
+        decimal expectedAmount = decimal.Parse(amount, CultureInfo.InvariantCulture);
         WalletEntity wallet = SharedWallet("UAH");
         DateTime date = new(2024, 3, 1, 0, 0, 0, DateTimeKind.Utc);
 
@@ -84,45 +89,16 @@ public class OperationServiceTests
         {
             WalletId = _walletId,
             TypeId = _typeId,
-            Amount = 250.50m,
+            Amount = expectedAmount,
             Date = date,
-            Note = "Rent",
-            TransactionCurrency = "UAH"
+            Note = note,
+            TransactionCurrency = transactionCurrency
         };
 
         OperationModel response = await service.CreateAsync(request);
 
-        Assert.AreEqual(250.50m, response.Amount);
-        Assert.AreEqual("Rent", response.Note);
-        Assert.AreEqual(0, fx.ConvertCallCount);
-    }
-
-    [TestMethod]
-    public async Task Test_OperationService_CreateAsync_NullTransactionCurrency_DoesNotCallFx()
-    {
-        WalletEntity wallet = SharedWallet("UAH");
-
-        FakeOperationRepository repo = new();
-        repo.SeedType(IncomeType());
-        FakeWalletService wallets = new(wallet);
-        FakeCurrencyConverter fx = new(converted: 0m, rate: 0m);
-
-        OperationService service = new(repo, wallets, fx);
-
-        CreateOperationModel request = new()
-        {
-            WalletId = _walletId,
-            TypeId = _typeId,
-            Amount = 99m,
-            Date = new DateTime(2024, 5, 5, 0, 0, 0, DateTimeKind.Utc),
-            Note = null,
-            TransactionCurrency = null
-        };
-
-        OperationModel response = await service.CreateAsync(request);
-
-        Assert.AreEqual(99m, response.Amount);
-        Assert.IsNull(response.Note);
+        Assert.AreEqual(expectedAmount, response.Amount);
+        Assert.AreEqual(note, response.Note);
         Assert.AreEqual(0, fx.ConvertCallCount);
     }
 

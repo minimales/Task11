@@ -1,8 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
-using task11.ApplicationCore;
 using task11.Infrastructure.Persistence;
-using task11.Infrastructure.Time;
 using task11.ApplicationCore.Entities;
 using static DataTestHelpers;
 
@@ -25,22 +23,16 @@ public class UserEntityConfigurationTests
         Assert.AreEqual(nameof(UserEntity.Id), key.Properties[0].Name);
     }
 
-    [TestMethod]
-    public void Test_UserEntityConfiguration_UsernameIsRequiredWithMaxLength50()
+    [DataTestMethod]
+    [DataRow(nameof(UserEntity.Username), 50)]
+    [DataRow(nameof(UserEntity.PasswordHash), 512)]
+    public void Test_UserEntityConfiguration_PropertyIsRequiredWithExpectedMaxLength(
+        string propertyName, int expectedMaxLength)
     {
         using AppDbContext context = RelationalModel();
-        IProperty username = EntityType<UserEntity>(context).FindProperty(nameof(UserEntity.Username))!;
-        Assert.IsFalse(username.IsNullable);
-        Assert.AreEqual(50, username.GetMaxLength());
-    }
-
-    [TestMethod]
-    public void Test_UserEntityConfiguration_PasswordHashIsRequiredWithMaxLength512()
-    {
-        using AppDbContext context = RelationalModel();
-        IProperty hash = EntityType<UserEntity>(context).FindProperty(nameof(UserEntity.PasswordHash))!;
-        Assert.IsFalse(hash.IsNullable);
-        Assert.AreEqual(512, hash.GetMaxLength());
+        IProperty property = EntityType<UserEntity>(context).FindProperty(propertyName)!;
+        Assert.IsFalse(property.IsNullable);
+        Assert.AreEqual(expectedMaxLength, property.GetMaxLength());
     }
 
     [TestMethod]

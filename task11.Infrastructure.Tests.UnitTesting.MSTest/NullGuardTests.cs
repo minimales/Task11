@@ -1,5 +1,4 @@
 using Microsoft.Extensions.Caching.Memory;
-using task11.ApplicationCore;
 using task11.Infrastructure.Currency;
 using task11.Infrastructure.Persistence;
 using task11.Infrastructure.Persistence.Interceptors;

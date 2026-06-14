@@ -1,8 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
-using task11.ApplicationCore;
 using task11.Infrastructure.Persistence;
-using task11.Infrastructure.Time;
 using task11.ApplicationCore.Entities;
 using static DataTestHelpers;
 
@@ -25,22 +23,16 @@ public class OperationTypeEntityConfigurationTests
         Assert.AreEqual(nameof(OperationTypeEntity.Id), key.Properties[0].Name);
     }
 
-    [TestMethod]
-    public void Test_OperationTypeEntityConfiguration_NameIsRequiredWithMaxLength100()
+    [DataTestMethod]
+    [DataRow(nameof(OperationTypeEntity.Name), false, 100)]
+    [DataRow(nameof(OperationTypeEntity.Description), true, 500)]
+    public void Test_OperationTypeEntityConfiguration_PropertyHasExpectedNullabilityAndMaxLength(
+        string propertyName, bool expectedNullable, int expectedMaxLength)
     {
         using AppDbContext context = RelationalModel();
-        IProperty name = EntityType<OperationTypeEntity>(context).FindProperty(nameof(OperationTypeEntity.Name))!;
-        Assert.IsFalse(name.IsNullable);
-        Assert.AreEqual(100, name.GetMaxLength());
-    }
-
-    [TestMethod]
-    public void Test_OperationTypeEntityConfiguration_DescriptionIsOptionalWithMaxLength500()
-    {
-        using AppDbContext context = RelationalModel();
-        IProperty description = EntityType<OperationTypeEntity>(context).FindProperty(nameof(OperationTypeEntity.Description))!;
-        Assert.IsTrue(description.IsNullable);
-        Assert.AreEqual(500, description.GetMaxLength());
+        IProperty property = EntityType<OperationTypeEntity>(context).FindProperty(propertyName)!;
+        Assert.AreEqual(expectedNullable, property.IsNullable);
+        Assert.AreEqual(expectedMaxLength, property.GetMaxLength());
     }
 
     [TestMethod]

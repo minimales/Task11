@@ -1,12 +1,9 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using task11.ApplicationCore;
 using task11.ApplicationCore.Auth;
-using task11.ApplicationCore.Currency;
 using task11.ApplicationCore.Models;
 using task11.ApplicationCore.Repositories.Abstractions;
 using task11.ApplicationCore.Services;
-using task11.ApplicationCore.Services.Abstractions;
 using task11.ApplicationCore.Entities;
 
 [TestClass]

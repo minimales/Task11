@@ -1,8 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
-using task11.ApplicationCore;
 using task11.Infrastructure.Persistence;
-using task11.Infrastructure.Time;
 using task11.ApplicationCore.Entities;
 using static DataTestHelpers;
 
@@ -64,25 +62,17 @@ public class WalletEntityConfigurationTests
         Assert.IsFalse(index.IsUnique);
     }
 
-    [TestMethod]
-    public void Test_WalletEntityConfiguration_OperationsForeignKeyUsesRestrict()
+    [DataTestMethod]
+    [DataRow(typeof(FinancialOperationEntity), "WalletId")]
+    [DataRow(typeof(OperationTypeEntity), "WalletId")]
+    public void Test_WalletEntityConfiguration_ChildForeignKeyToWalletUsesRestrict(
+        Type declaringEntityType, string expectedForeignKeyProperty)
     {
         using AppDbContext context = RelationalModel();
-        IForeignKey fk = EntityType<FinancialOperationEntity>(context).GetForeignKeys()
+        IForeignKey fk = context.Model.FindEntityType(declaringEntityType)!.GetForeignKeys()
             .Single(f => f.PrincipalEntityType.ClrType == typeof(WalletEntity));
 
         Assert.AreEqual(DeleteBehavior.Restrict, fk.DeleteBehavior);
-        Assert.AreEqual(nameof(FinancialOperationEntity.WalletId), fk.Properties[0].Name);
-    }
-
-    [TestMethod]
-    public void Test_WalletEntityConfiguration_OperationTypesForeignKeyUsesRestrict()
-    {
-        using AppDbContext context = RelationalModel();
-        IForeignKey fk = EntityType<OperationTypeEntity>(context).GetForeignKeys()
-            .Single(f => f.PrincipalEntityType.ClrType == typeof(WalletEntity));
-
-        Assert.AreEqual(DeleteBehavior.Restrict, fk.DeleteBehavior);
-        Assert.AreEqual(nameof(OperationTypeEntity.WalletId), fk.Properties[0].Name);
+        Assert.AreEqual(expectedForeignKeyProperty, fk.Properties[0].Name);
     }
 }

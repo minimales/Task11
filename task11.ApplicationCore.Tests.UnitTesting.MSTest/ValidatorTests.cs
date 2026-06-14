@@ -1,3 +1,4 @@
+using System.Globalization;
 using FluentValidation.Results;
 using task11.ApplicationCore.Models;
 using task11.ApplicationCore.Validators;
@@ -40,20 +41,13 @@ public class ValidatorTests
         Assert.IsTrue(result.Errors.Any(e => e.PropertyName == nameof(CreateOperationModel.Amount)));
     }
 
-    [TestMethod]
-    public void Test_CreateOperationModelValidator_Validate_AmountAboveCap_IsRejected()
+    [DataTestMethod]
+    [DataRow("1000000001")]
+    [DataRow("1.234")]
+    public void Test_CreateOperationModelValidator_Validate_InvalidAmount_IsRejected(string amount)
     {
         CreateOperationModel request = ValidCreate();
-        request.Amount = 1_000_000_001m;
-
-        Assert.IsFalse(_create.Validate(request).IsValid);
-    }
-
-    [TestMethod]
-    public void Test_CreateOperationModelValidator_Validate_AmountWithMoreThanTwoDecimals_IsRejected()
-    {
-        CreateOperationModel request = ValidCreate();
-        request.Amount = 1.234m;
+        request.Amount = decimal.Parse(amount, CultureInfo.InvariantCulture);
 
         Assert.IsFalse(_create.Validate(request).IsValid);
     }
