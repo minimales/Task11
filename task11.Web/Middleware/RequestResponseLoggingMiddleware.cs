@@ -19,6 +19,8 @@ public class RequestResponseLoggingMiddleware
         ILogger<RequestResponseLoggingMiddleware> logger,
         IConfiguration configuration)
     {
+        ArgumentNullException.ThrowIfNull(next);
+        ArgumentNullException.ThrowIfNull(logger);
         ArgumentNullException.ThrowIfNull(configuration);
 
         _next = next;

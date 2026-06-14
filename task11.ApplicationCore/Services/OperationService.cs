@@ -3,7 +3,7 @@ using task11.ApplicationCore.Currency;
 using task11.ApplicationCore.Models;
 using task11.ApplicationCore.Repositories.Abstractions;
 using task11.ApplicationCore.Services.Abstractions;
-using task11.Data.Entities;
+using task11.ApplicationCore.Entities;
 
 namespace task11.ApplicationCore.Services;
 
@@ -18,6 +18,10 @@ public class OperationService : IOperationService
         IWalletService wallets,
         ICurrencyConverter currencyConverter)
     {
+        ArgumentNullException.ThrowIfNull(operations);
+        ArgumentNullException.ThrowIfNull(wallets);
+        ArgumentNullException.ThrowIfNull(currencyConverter);
+
         _operations = operations;
         _wallets = wallets;
         _currencyConverter = currencyConverter;

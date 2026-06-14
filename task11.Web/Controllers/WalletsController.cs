@@ -14,6 +14,8 @@ public class WalletsController : ControllerBase
 
     public WalletsController(IWalletService walletService)
     {
+        ArgumentNullException.ThrowIfNull(walletService);
+
         _walletService = walletService;
     }
 

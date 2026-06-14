@@ -15,6 +15,8 @@ public class ReportsController : ControllerBase
 
     public ReportsController(IReportService reportService)
     {
+        ArgumentNullException.ThrowIfNull(reportService);
+
         _reportService = reportService;
     }
 

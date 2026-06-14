@@ -12,6 +12,7 @@
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
         <PackageReference Include="MSTest" Version="3.6.4" />
         <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="9.0.4" />
+        <PackageReference Include="NetArchTest.Rules" Version="1.3.2" />
     </ItemGroup>
 
     <ItemGroup>
@@ -19,7 +20,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\task11.Data\task11.Data.csproj" />
+        <ProjectReference Include="..\task11.Infrastructure\task11.Infrastructure.csproj" />
         <ProjectReference Include="..\task11.ApplicationCore\task11.ApplicationCore.csproj" />
     </ItemGroup>
 

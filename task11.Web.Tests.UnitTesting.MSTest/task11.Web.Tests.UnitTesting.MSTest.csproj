@@ -23,7 +23,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\task11.Data\task11.Data.csproj" />
+        <ProjectReference Include="..\task11.Infrastructure\task11.Infrastructure.csproj" />
         <ProjectReference Include="..\task11.ApplicationCore\task11.ApplicationCore.csproj" />
         <ProjectReference Include="..\task11.Web\task11.Web.csproj" />
     </ItemGroup>

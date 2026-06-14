@@ -1,10 +1,10 @@
 using task11.ApplicationCore.Models;
-using task11.ApplicationCore.Repositories;
 using task11.ApplicationCore.Repositories.Abstractions;
 using task11.ApplicationCore.Services;
-using task11.Data;
-using task11.Data.Entities;
-using task11.Data.Entities.Enums;
+using task11.ApplicationCore.Entities;
+using task11.ApplicationCore.Entities.Enums;
+using task11.Infrastructure.Persistence;
+using task11.Infrastructure.Repositories;
 
 [TestClass]
 public class ReportServiceTests

@@ -4,8 +4,8 @@ using task11.ApplicationCore.Currency;
 using task11.ApplicationCore.Models;
 using task11.ApplicationCore.Repositories.Abstractions;
 using task11.ApplicationCore.Services.Abstractions;
-using task11.Data;
-using task11.Data.Entities;
+using task11.ApplicationCore.Entities;
+using task11.Infrastructure.Persistence;
 
 public class InMemoryDbContextFactory : DbContextFactory
 {

@@ -14,6 +14,8 @@ public class OperationsController : ControllerBase
 
     public OperationsController(IOperationService operations)
     {
+        ArgumentNullException.ThrowIfNull(operations);
+
         _operations = operations;
     }
 

@@ -3,8 +3,8 @@ using System.Security.Claims;
 using System.Text;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
-using task11.Data;
-using task11.Data.Entities;
+using task11.ApplicationCore;
+using task11.ApplicationCore.Entities;
 
 namespace task11.ApplicationCore.Auth;
 
@@ -15,6 +15,9 @@ public class JwtTokenGenerator
 
     public JwtTokenGenerator(IOptions<JwtSettings> settings, IClock clock)
     {
+        ArgumentNullException.ThrowIfNull(settings);
+        ArgumentNullException.ThrowIfNull(clock);
+
         _settings = settings.Value;
         _clock = clock;
     }

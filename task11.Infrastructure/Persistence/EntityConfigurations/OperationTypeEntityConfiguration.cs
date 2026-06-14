@@ -1,0 +1,35 @@
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using task11.ApplicationCore.Entities;
+
+namespace task11.Infrastructure.Persistence.EntityConfigurations;
+
+public class OperationTypeEntityConfiguration : IEntityTypeConfiguration<OperationTypeEntity>
+{
+    public void Configure(EntityTypeBuilder<OperationTypeEntity> builder)
+    {
+        builder.ToTable("operation_types");
+
+        builder.HasKey(t => t.Id);
+
+        builder.Property(t => t.Name)
+            .IsRequired()
+            .HasMaxLength(100);
+
+        builder.Property(t => t.Description)
+            .HasMaxLength(500);
+
+        builder.Property(t => t.Kind)
+            .IsRequired()
+            .HasConversion<int>();
+
+        builder.HasIndex(t => new { t.WalletId, t.Name })
+            .IsUnique()
+            .HasFilter("\"IsDeleted\" = false");
+
+        builder.HasMany(t => t.Operations)
+            .WithOne(o => o.OperationType)
+            .HasForeignKey(o => o.OperationTypeId)
+            .OnDelete(DeleteBehavior.Restrict);
+    }
+}

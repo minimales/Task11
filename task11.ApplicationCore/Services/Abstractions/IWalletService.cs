@@ -1,5 +1,5 @@
 using task11.ApplicationCore.Models;
-using task11.Data.Entities;
+using task11.ApplicationCore.Entities;
 
 namespace task11.ApplicationCore.Services.Abstractions;
 

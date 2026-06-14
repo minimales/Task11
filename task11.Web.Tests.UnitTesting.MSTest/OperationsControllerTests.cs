@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using task11.ApplicationCore.Models;
-using task11.Data.Entities.Enums;
+using task11.ApplicationCore.Entities.Enums;
 using task11.Web.Controllers;
 
 [TestClass]

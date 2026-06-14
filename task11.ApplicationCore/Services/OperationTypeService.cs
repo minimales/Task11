@@ -1,7 +1,7 @@
 using task11.ApplicationCore.Models;
 using task11.ApplicationCore.Repositories.Abstractions;
 using task11.ApplicationCore.Services.Abstractions;
-using task11.Data.Entities;
+using task11.ApplicationCore.Entities;
 
 namespace task11.ApplicationCore.Services;
 
@@ -12,6 +12,9 @@ public class OperationTypeService : IOperationTypeService
 
     public OperationTypeService(IOperationTypeRepository repository, IWalletService walletService)
     {
+        ArgumentNullException.ThrowIfNull(repository);
+        ArgumentNullException.ThrowIfNull(walletService);
+
         _repository = repository;
         _walletService = walletService;
     }

@@ -2,7 +2,7 @@ using task11.ApplicationCore.Auth;
 using task11.ApplicationCore.Models;
 using task11.ApplicationCore.Repositories.Abstractions;
 using task11.ApplicationCore.Services.Abstractions;
-using task11.Data.Entities;
+using task11.ApplicationCore.Entities;
 
 namespace task11.ApplicationCore.Services;
 
@@ -17,6 +17,10 @@ public class ReportService : IReportService
         IWalletRepository walletRepository,
         ICurrentUser currentUser)
     {
+        ArgumentNullException.ThrowIfNull(reportRepository);
+        ArgumentNullException.ThrowIfNull(walletRepository);
+        ArgumentNullException.ThrowIfNull(currentUser);
+
         _reportRepository = reportRepository;
         _walletRepository = walletRepository;
         _currentUser = currentUser;

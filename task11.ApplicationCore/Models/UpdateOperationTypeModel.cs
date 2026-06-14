@@ -1,4 +1,4 @@
-using task11.Data.Entities.Enums;
+using task11.ApplicationCore.Entities.Enums;
 
 namespace task11.ApplicationCore.Models;
 

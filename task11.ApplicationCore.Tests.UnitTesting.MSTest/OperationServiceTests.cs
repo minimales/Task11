@@ -1,7 +1,7 @@
 using task11.ApplicationCore.Models;
 using task11.ApplicationCore.Services;
-using task11.Data.Entities;
-using task11.Data.Entities.Enums;
+using task11.ApplicationCore.Entities;
+using task11.ApplicationCore.Entities.Enums;
 
 [TestClass]
 public class OperationServiceTests

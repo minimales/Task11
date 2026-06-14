@@ -1,4 +1,4 @@
-using task11.Data.Entities;
+using task11.ApplicationCore.Entities;
 
 namespace task11.ApplicationCore.Repositories.Abstractions;
 

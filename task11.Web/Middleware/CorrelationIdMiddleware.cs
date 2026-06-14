@@ -11,6 +11,8 @@ public class CorrelationIdMiddleware
 
     public CorrelationIdMiddleware(RequestDelegate next)
     {
+        ArgumentNullException.ThrowIfNull(next);
+
         _next = next;
     }
 

@@ -1,26 +1,33 @@
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Polly;
-using Polly.Extensions.Http;
+using Polly.Retry;
 using Serilog;
 using Serilog.Events;
 using Serilog.Formatting.Json;
 using FluentValidation;
 using SharpGrip.FluentValidation.AutoValidation.Mvc.Extensions;
+using SharpGrip.FluentValidation.AutoValidation.Mvc.Enums;
+using SharpGrip.FluentValidation.AutoValidation.Mvc.Results;
 using task11.ApplicationCore;
 using task11.ApplicationCore.Auth;
 using task11.ApplicationCore.Currency;
-using task11.ApplicationCore.Repositories;
 using task11.ApplicationCore.Repositories.Abstractions;
 using task11.ApplicationCore.Services;
 using task11.ApplicationCore.Services.Abstractions;
 using task11.ApplicationCore.Validators;
-using task11.Data;
-using task11.Data.Entities;
+using task11.ApplicationCore.Entities;
+using task11.Infrastructure.Currency;
+using task11.Infrastructure.Persistence;
+using task11.Infrastructure.Repositories;
+using task11.Infrastructure.Time;
+using task11.Web.Infrastructure;
 using task11.Web.Infrastructure.Auth;
 using task11.Web.Middleware;
 
@@ -113,6 +120,11 @@ try
 
     builder.Services.AddMemoryCache();
 
+    var fxOptions = new FxOptions();
+    config.GetSection(FxOptions.SectionName).Bind(fxOptions);
+    int fxRetryCount = fxOptions.RetryCount > 0 ? fxOptions.RetryCount : 3;
+    const string FxUserAgent = "task11-PersonalFinanceApi/1.0";
+
     builder.Services.AddHttpClient<FrankfurterClient>((sp, client) =>
         {
             var options = sp.GetRequiredService<IOptions<FxOptions>>().Value;
@@ -123,9 +135,12 @@ try
             client.BaseAddress = new Uri(baseUrl, UriKind.Absolute);
             client.Timeout = TimeSpan.FromSeconds(10);
             client.DefaultRequestHeaders.Accept.ParseAdd("application/json");
+            client.DefaultRequestHeaders.UserAgent.ParseAdd(FxUserAgent);
         })
-        .AddPolicyHandler((sp, _) =>
-            FxRetryPolicy(sp.GetRequiredService<IOptions<FxOptions>>().Value.RetryCount));
+        .AddStandardResilienceHandler(resilience =>
+        {
+            resilience.Retry.MaxRetryAttempts = fxRetryCount;
+        });
 
     builder.Services.AddHttpClient<PrivatBankClient>((sp, client) =>
         {
@@ -137,14 +152,57 @@ try
             client.BaseAddress = new Uri(baseUrl, UriKind.Absolute);
             client.Timeout = TimeSpan.FromSeconds(10);
             client.DefaultRequestHeaders.Accept.ParseAdd("application/json");
+            client.DefaultRequestHeaders.UserAgent.ParseAdd(FxUserAgent);
         })
-        .AddPolicyHandler((sp, _) =>
-            FxRetryPolicy(sp.GetRequiredService<IOptions<FxOptions>>().Value.RetryCount));
+        .AddStandardResilienceHandler(resilience =>
+        {
+            resilience.Retry.MaxRetryAttempts = fxRetryCount;
+        });
 
     builder.Services.AddScoped<ICurrencyConverter, CurrencyConverter>();
 
     builder.Services.AddValidatorsFromAssemblyContaining<LoginModelValidator>(includeInternalTypes: true);
-    builder.Services.AddFluentValidationAutoValidation(c => c.DisableBuiltInModelValidation = true);
+    builder.Services.AddFluentValidationAutoValidation(c =>
+    {
+        c.DisableBuiltInModelValidation = true;
+        c.ValidationStrategy = ValidationStrategy.All;
+    });
+    builder.Services.AddScoped<IFluentValidationAutoValidationResultFactory, ValidationProblemResultFactory>();
+
+    builder.Services.AddProblemDetails(options =>
+    {
+        options.CustomizeProblemDetails = context =>
+        {
+            context.ProblemDetails.Type ??= "about:blank";
+            ProblemDetailsEnricher.Enrich(context.HttpContext, context.ProblemDetails);
+        };
+    });
+
+    builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+
+    // Unify the validation 400 body with the exception-mapped ProblemDetails contract.
+    // SharpGrip auto-validation and built-in [ApiController] validation both route
+    // through ApiBehaviorOptions.InvalidModelStateResponseFactory.
+    builder.Services.Configure<ApiBehaviorOptions>(options =>
+    {
+        options.InvalidModelStateResponseFactory = context =>
+        {
+            var problemDetails = new ValidationProblemDetails(context.ModelState)
+            {
+                Type = "about:blank",
+                Title = "Validation failed",
+                Status = StatusCodes.Status400BadRequest,
+                Instance = context.HttpContext.Request.Path
+            };
+
+            ProblemDetailsEnricher.Enrich(context.HttpContext, problemDetails);
+
+            return new BadRequestObjectResult(problemDetails)
+            {
+                ContentTypes = { "application/problem+json" }
+            };
+        };
+    });
 
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddSwaggerGen(options =>
@@ -183,7 +241,11 @@ try
     var app = builder.Build();
 
     app.UseMiddleware<CorrelationIdMiddleware>();
-    app.UseMiddleware<ExceptionHandlingMiddleware>();
+
+    // IExceptionHandler-based ProblemDetails pipeline (replaces the old custom middleware).
+    app.UseExceptionHandler();
+    // Gives empty-body challenge responses (401/403/404/405) a ProblemDetails body too.
+    app.UseStatusCodePages();
 
     app.UseSwagger();
     app.UseSwaggerUI();
@@ -228,33 +290,35 @@ static void ConfigureSerilog(IConfiguration configuration)
         .CreateLogger();
 }
 
-static IAsyncPolicy<HttpResponseMessage> FxRetryPolicy(int retryCount) =>
-    HttpPolicyExtensions
-        .HandleTransientHttpError()
-        .WaitAndRetryAsync(
-            retryCount: retryCount > 0 ? retryCount : 3,
-            sleepDurationProvider: attempt => TimeSpan.FromSeconds(Math.Pow(2, attempt)));
-
 static async Task MigrateAndSeedAsync(WebApplication app)
 {
     var logger = app.Services.GetRequiredService<ILogger<Program>>();
     var factory = app.Services.GetRequiredService<DbContextFactory>();
 
-    var retryPolicy = Policy
-        .Handle<Exception>()
-        .WaitAndRetryAsync(
-            retryCount: 10,
-            sleepDurationProvider: attempt => TimeSpan.FromSeconds(Math.Min(30, Math.Pow(2, attempt))),
-            onRetry: (exception, delay, attempt, _) =>
+    var pipeline = new ResiliencePipelineBuilder()
+        .AddRetry(new RetryStrategyOptions
+        {
+            ShouldHandle = new PredicateBuilder().Handle<Exception>(),
+            MaxRetryAttempts = 10,
+            BackoffType = DelayBackoffType.Exponential,
+            UseJitter = true,
+            Delay = TimeSpan.FromSeconds(1),
+            MaxDelay = TimeSpan.FromSeconds(30),
+            OnRetry = args =>
+            {
                 logger.LogWarning(
-                    exception,
+                    args.Outcome.Exception,
                     "Database migration attempt {Attempt} failed; retrying in {Delay}.",
-                    attempt, delay));
+                    args.AttemptNumber + 1, args.RetryDelay);
+                return ValueTask.CompletedTask;
+            }
+        })
+        .Build();
 
-    await retryPolicy.ExecuteAsync(() =>
+    await pipeline.ExecuteAsync(_ =>
     {
         factory.MigrateIfRelational();
-        return Task.CompletedTask;
+        return ValueTask.CompletedTask;
     });
 
     await SeedAsync(app.Services);

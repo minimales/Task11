@@ -3,7 +3,7 @@ using System.Text;
 using Microsoft.Extensions.Caching.Memory;
 using task11.ApplicationCore;
 using task11.ApplicationCore.Currency;
-using task11.Data;
+using task11.Infrastructure.Currency;
 
 [TestClass]
 public class CurrencyConverterTests

@@ -21,6 +21,11 @@ public class AuthService : IAuthService
         JwtTokenGenerator tokenGenerator,
         ILogger<AuthService> logger)
     {
+        ArgumentNullException.ThrowIfNull(users);
+        ArgumentNullException.ThrowIfNull(passwordHasher);
+        ArgumentNullException.ThrowIfNull(tokenGenerator);
+        ArgumentNullException.ThrowIfNull(logger);
+
         _users = users;
         _passwordHasher = passwordHasher;
         _tokenGenerator = tokenGenerator;

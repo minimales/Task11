@@ -129,8 +129,8 @@ internal class FakeWalletService : IWalletService
     public Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
         => Task.CompletedTask;
 
-    public Task<task11.Data.Entities.WalletEntity> EnsureCanAccessAsync(Guid walletId, CancellationToken cancellationToken = default)
-        => Task.FromResult(new task11.Data.Entities.WalletEntity { Id = walletId });
+    public Task<task11.ApplicationCore.Entities.WalletEntity> EnsureCanAccessAsync(Guid walletId, CancellationToken cancellationToken = default)
+        => Task.FromResult(new task11.ApplicationCore.Entities.WalletEntity { Id = walletId });
 }
 
 internal class FakeOperationService : IOperationService

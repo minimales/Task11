@@ -14,6 +14,9 @@ public class AuthController : ControllerBase
 
     public AuthController(IAuthService authService, IUserService userService)
     {
+        ArgumentNullException.ThrowIfNull(authService);
+        ArgumentNullException.ThrowIfNull(userService);
+
         _authService = authService;
         _userService = userService;
     }

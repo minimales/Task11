@@ -14,6 +14,8 @@ public class OperationTypesController : ControllerBase
 
     public OperationTypesController(IOperationTypeService service)
     {
+        ArgumentNullException.ThrowIfNull(service);
+
         _service = service;
     }
 

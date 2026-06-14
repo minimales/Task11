@@ -6,8 +6,8 @@ WORKDIR /src
 
 # Copy the SDK pin and the production project files first to maximise layer caching.
 COPY ["global.json", "./"]
-COPY ["task11.Data/task11.Data.csproj", "task11.Data/"]
 COPY ["task11.ApplicationCore/task11.ApplicationCore.csproj", "task11.ApplicationCore/"]
+COPY ["task11.Infrastructure/task11.Infrastructure.csproj", "task11.Infrastructure/"]
 COPY ["task11.Web/task11.Web.csproj", "task11.Web/"]
 RUN dotnet restore "task11.Web/task11.Web.csproj"
 
