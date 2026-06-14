@@ -7,7 +7,6 @@ namespace task11.Infrastructure.Currency;
 
 public class PrivatBankClient
 {
-
     private class PrivatBankResponse
     {
         [JsonPropertyName("date")] public string? Date { get; set; }
@@ -60,7 +59,6 @@ public class PrivatBankClient
 
         if (fromUah == toUah)
         {
-
             throw new FxUnavailableException(
                 $"PrivatBank only converts a foreign currency against UAH (got {from}->{to}).");
         }

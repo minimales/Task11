@@ -4,7 +4,6 @@ namespace task11.ApplicationCore.Models;
 
 public class ReportModel
 {
-
     public decimal TotalIncome { get; set; }
 
     public decimal TotalExpense { get; set; }
@@ -18,7 +17,6 @@ public class ReportModel
 
 public class ReportOperationLineModel
 {
-
     public Guid Id { get; set; }
 
     public Guid OperationTypeId { get; set; }

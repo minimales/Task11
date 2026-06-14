@@ -2,7 +2,6 @@ namespace task11.ApplicationCore.Models;
 
 public class UpdateOperationModel
 {
-
     public Guid TypeId { get; set; }
 
     public decimal Amount { get; set; }

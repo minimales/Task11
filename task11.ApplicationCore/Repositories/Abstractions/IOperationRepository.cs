@@ -4,7 +4,6 @@ namespace task11.ApplicationCore.Repositories.Abstractions;
 
 public interface IOperationRepository
 {
-
     Task<FinancialOperationEntity?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
     Task<FinancialOperationEntity?> GetWithTypeAsync(Guid id, CancellationToken cancellationToken = default);

@@ -4,7 +4,6 @@ namespace task11.ApplicationCore.Repositories.Abstractions;
 
 public interface IOperationTypeRepository
 {
-
     Task<OperationTypeEntity?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<OperationTypeEntity>> ListByWalletAsync(Guid walletId, CancellationToken cancellationToken = default);

@@ -4,7 +4,6 @@ namespace task11.ApplicationCore.Services.Abstractions;
 
 public interface IUserService
 {
-
     Task<IReadOnlyList<UserModel>> GetAllAsync(CancellationToken cancellationToken = default);
 
     Task<UserModel> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);

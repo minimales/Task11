@@ -143,7 +143,6 @@ public class OperationService : IOperationService
         string? userNote,
         CancellationToken cancellationToken)
     {
-
         if (string.IsNullOrWhiteSpace(transactionCurrency)
             || string.Equals(transactionCurrency, baseCurrency, StringComparison.OrdinalIgnoreCase))
         {

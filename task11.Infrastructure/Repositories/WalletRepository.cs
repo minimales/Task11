@@ -33,7 +33,6 @@ public class WalletRepository : IWalletRepository
 
         if (!isAdmin)
         {
-
             query = query.Where(w => w.OwnerUserId == null || w.OwnerUserId == userId);
         }
 

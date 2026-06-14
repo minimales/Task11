@@ -4,7 +4,6 @@ namespace task11.ApplicationCore.Models;
 
 public class OperationTypeModel
 {
-
     public Guid Id { get; set; }
 
     public Guid WalletId { get; set; }

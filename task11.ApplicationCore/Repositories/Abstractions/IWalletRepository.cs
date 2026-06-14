@@ -4,7 +4,6 @@ namespace task11.ApplicationCore.Repositories.Abstractions;
 
 public interface IWalletRepository
 {
-
     Task<WalletEntity?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<WalletEntity>> ListAccessibleAsync(

@@ -2,7 +2,6 @@ namespace task11.ApplicationCore.Models;
 
 public class WalletModel
 {
-
     public Guid Id { get; set; }
 
     public string Name { get; set; } = string.Empty;

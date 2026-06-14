@@ -26,7 +26,6 @@ public class PeriodReportModelValidator : AbstractValidator<PeriodReportModel>
 
     private static bool HaveSpanWithinLimit(PeriodReportModel request)
     {
-
         double spanDays = (request.EndDate.Date - request.StartDate.Date).TotalDays + 1;
         return spanDays <= _maxSpanDays;
     }

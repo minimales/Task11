@@ -7,7 +7,6 @@ namespace task11.Infrastructure.Currency;
 
 public class FrankfurterClient
 {
-
     private class FrankfurterResponse
     {
         [JsonPropertyName("amount")]
@@ -61,7 +60,6 @@ public class FrankfurterClient
         }
         catch (TaskCanceledException ex) when (!cancellationToken.IsCancellationRequested)
         {
-
             throw new FxUnavailableException(
                 $"The FX provider timed out for {from}->{to} on {datePath}.", ex);
         }

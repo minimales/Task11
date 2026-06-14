@@ -45,7 +45,6 @@ public class AuthService : IAuthService
 
         if (!credentialsValid)
         {
-
             _logger.LogWarning("Failed login attempt for username '{Username}'.", request.Username);
             return null;
         }

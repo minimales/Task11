@@ -4,7 +4,6 @@ namespace task11.ApplicationCore.Services.Abstractions;
 
 public interface IOperationService
 {
-
     Task<IReadOnlyList<OperationModel>> GetByWalletAsync(Guid walletId, CancellationToken cancellationToken = default);
 
     Task<OperationModel> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);

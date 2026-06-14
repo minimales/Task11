@@ -2,7 +2,6 @@ namespace task11.ApplicationCore.Auth;
 
 public interface ICurrentUser
 {
-
     Guid? UserId { get; }
 
     string? Role { get; }

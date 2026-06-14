@@ -67,7 +67,6 @@ public class WalletService : IWalletService
 
         if (!string.Equals(newCurrency, wallet.BaseCurrency, StringComparison.OrdinalIgnoreCase))
         {
-
             if (await _wallets.HasOperationsAsync(wallet.Id, cancellationToken))
             {
                 throw new ConflictException(
