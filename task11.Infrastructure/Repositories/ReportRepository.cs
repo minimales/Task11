@@ -8,7 +8,7 @@ namespace task11.Infrastructure.Repositories;
 
 public class ReportRepository : IReportRepository
 {
-    private record KindTotal
+    private class KindTotal
     {
         public OperationKind Kind { get; init; }
         public decimal Total { get; init; }

@@ -18,4 +18,15 @@ public interface IReportRepository
         CancellationToken cancellationToken = default);
 }
 
-public readonly record struct ReportTotals(decimal TotalIncome, decimal TotalExpense);
+public class ReportTotals
+{
+    public decimal TotalIncome { get; }
+
+    public decimal TotalExpense { get; }
+
+    public ReportTotals(decimal totalIncome, decimal totalExpense)
+    {
+        TotalIncome = totalIncome;
+        TotalExpense = totalExpense;
+    }
+}

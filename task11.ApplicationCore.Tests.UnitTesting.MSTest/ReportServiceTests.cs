@@ -24,7 +24,7 @@ public class ReportServiceTests
     {
         WalletEntity wallet = SharedWallet("USD");
 
-        FakeReportRepository reportRepository = new(new ReportTotals(TotalIncome: 1500m, TotalExpense: 400m));
+        FakeReportRepository reportRepository = new(new ReportTotals(1500m, 400m));
 
         ReportService service = new(
             reportRepository,
@@ -46,7 +46,7 @@ public class ReportServiceTests
     {
         WalletEntity wallet = SharedWallet("EUR");
 
-        FakeReportRepository reportRepository = new(new ReportTotals(TotalIncome: 200m, TotalExpense: 750m));
+        FakeReportRepository reportRepository = new(new ReportTotals(200m, 750m));
 
         ReportService service = new(
             reportRepository,
@@ -148,7 +148,7 @@ public class ReportServiceTests
         };
 
         FakeReportRepository reportRepository = new(
-            new ReportTotals(TotalIncome: 42m, TotalExpense: 0m),
+            new ReportTotals(42m, 0m),
             new[] { orphan });
 
         ReportService service = new(
